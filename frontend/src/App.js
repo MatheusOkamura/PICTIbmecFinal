@@ -1,23 +1,26 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+// App.js ou onde estão suas rotas React
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import PortalICLanding from './components/Home';
 import LoginPage from './components/LoginPage';
-import ProfessorDashboard from './components/ProfessorDashboard';
-import AlunoDashboard from './components/AlunoDashboard';
-import Home from './components/Home';
 import AlunoDashboardIC from './components/AlunoDashboard';
 import ProfessorDashboardIC from './components/ProfessorDashboard';
+import EditarPerfilAluno from './components/EditarPerfilAluno';
+import EditarPerfilProfessor from './components/EditarPerfilProfessor';
+import DocumentosProjeto from './components/DocumentosProjeto';
 
 function App() {
   return (
     <Router>
-      <div className="App">
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/professor/dashboard" element={<ProfessorDashboard />} />
-          <Route path="/aluno/dashboard" element={<AlunoDashboard />} />
-          <Route path="/" element={<Home />} />
-        </Routes>
-      </div>
+      <Routes>
+        <Route path="/" element={<PortalICLanding />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/aluno/dashboard" element={<AlunoDashboardIC />} />
+        <Route path="/aluno/editar-perfil" element={<EditarPerfilAluno />} />
+        <Route path="/professor/dashboard" element={<ProfessorDashboardIC />} />
+        <Route path="/professor/editar-perfil" element={<EditarPerfilProfessor />} />
+        <Route path="/projeto/:id" element={<DocumentosProjeto />} />
+        <Route path="/projeto/:id/documentos" element={<DocumentosProjeto />} />
+      </Routes>
     </Router>
   );
 }

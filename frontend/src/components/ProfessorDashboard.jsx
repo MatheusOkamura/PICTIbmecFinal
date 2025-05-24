@@ -8,32 +8,23 @@ const ProfessorDashboardIC = () => {
   const [activeTab, setActiveTab] = useState('pendentes');
   
   // Estados para projetos
-  const [projetosPendentes, setProjetosPendentes] = useState([
-    {
-      id: 1,
-      titulo: "Análise de Dados Climáticos com IA",
-      aluno: "Maria Silva",
-      matricula: "2024001",
-      descricao: "Este projeto visa desenvolver algoritmos de machine learning para análise de padrões climáticos na região sudeste...",
-      dataSubmissao: "2024-05-20",
-      status: "pendente"
-    }
-  ]);
-  
-  const [projetosAtivos, setProjetosAtivos] = useState([
-    {
-      id: 2,
-      titulo: "Desenvolvimento de App Mobile para Sustentabilidade",
-      aluno: "João Santos",
-      matricula: "2024002",
-      descricao: "Aplicativo mobile para promover práticas sustentáveis no campus universitário...",
-      dataAprovacao: "2024-05-15",
-      status: "ativo",
-      ultimaPostagem: "2024-05-22",
-      documentos: 3
-    }
-  ]);
+  const [projetosPendentes, setProjetosPendentes] = useState([]);
+  const [projetosAtivos, setProjetosAtivos] = useState([]);
 
+  // Função para fazer requisições autenticadas
+  const fetchAuth = async (url, options = {}) => {
+    const token = localStorage.getItem('token');
+    return fetch(url, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...options.headers
+      }
+    });
+  };
+
+  // Carregar dados iniciais
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
@@ -48,12 +39,37 @@ const ProfessorDashboardIC = () => {
         }
         
         localStorage.setItem('token', token);
+        
+        // Carregar dados da API
+        carregarDados();
       } catch (error) {
         console.error('Erro ao decodificar token:', error);
       }
+    } else {
+      carregarDados();
     }
     setLoading(false);
   }, []);
+
+  const carregarDados = async () => {
+    try {
+      // Carregar projetos pendentes
+      const pendentesRes = await fetchAuth('http://localhost:8000/api/v1/projetos/pendentes');
+      if (pendentesRes.ok) {
+        const pendentes = await pendentesRes.json();
+        setProjetosPendentes(pendentes);
+      }
+
+      // Carregar projetos ativos
+      const ativosRes = await fetchAuth('http://localhost:8000/api/v1/projetos/ativos');
+      if (ativosRes.ok) {
+        const ativos = await ativosRes.json();
+        setProjetosAtivos(ativos);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -66,12 +82,27 @@ const ProfessorDashboardIC = () => {
     localStorage.setItem('welcome_modal_dismissed', 'true');
   };
 
-  const aprovarProjeto = (projetoId) => {
-    const projeto = projetosPendentes.find(p => p.id === projetoId);
-    if (projeto) {
-      setProjetosPendentes(prev => prev.filter(p => p.id !== projetoId));
-      setProjetosAtivos(prev => [...prev, { ...projeto, status: 'ativo', dataAprovacao: new Date().toISOString().split('T')[0] }]);
+  const aprovarProjeto = async (projetoId) => {
+    try {
+      const response = await fetchAuth(`http://localhost:8000/api/v1/projetos/aprovar/${projetoId}`, {
+        method: 'POST'
+      });
+
+      if (response.ok) {
+        alert('Projeto aprovado com sucesso!');
+        carregarDados(); // Recarregar projetos
+      } else {
+        const error = await response.json();
+        alert(`Erro: ${error.detail}`);
+      }
+    } catch (error) {
+      console.error('Erro ao aprovar projeto:', error);
+      alert('Erro ao aprovar projeto. Tente novamente.');
     }
+  };
+
+  const abrirEditarPerfil = () => {
+    window.location.href = '/professor/editar-perfil';
   };
 
   if (loading) {
@@ -199,7 +230,10 @@ const ProfessorDashboardIC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Perfil</p>
-                <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                <button 
+                  onClick={abrirEditarPerfil}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
                   Editar
                 </button>
               </div>
@@ -250,10 +284,10 @@ const ProfessorDashboardIC = () => {
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900 mb-2">{projeto.titulo}</h3>
                           <p className="text-sm text-gray-600">
-                            <strong>Aluno:</strong> {projeto.aluno} (Matrícula: {projeto.matricula})
+                            <strong>Aluno:</strong> {projeto.aluno_nome} (Matrícula: {projeto.matricula})
                           </p>
                           <p className="text-sm text-gray-600">
-                            <strong>Submetido em:</strong> {new Date(projeto.dataSubmissao).toLocaleDateString()}
+                            <strong>Submetido em:</strong> {new Date(projeto.data_submissao).toLocaleDateString()}
                           </p>
                         </div>
                         <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-0.5 rounded">
@@ -297,10 +331,10 @@ const ProfessorDashboardIC = () => {
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900 mb-2">{projeto.titulo}</h3>
                           <p className="text-sm text-gray-600">
-                            <strong>Aluno:</strong> {projeto.aluno} (Matrícula: {projeto.matricula})
+                            <strong>Aluno:</strong> {projeto.aluno_nome} (Matrícula: {projeto.matricula})
                           </p>
                           <p className="text-sm text-gray-600">
-                            <strong>Aprovado em:</strong> {new Date(projeto.dataAprovacao).toLocaleDateString()}
+                            <strong>Aprovado em:</strong> {new Date(projeto.data_aprovacao).toLocaleDateString()}
                           </p>
                         </div>
                         <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">
@@ -311,19 +345,27 @@ const ProfessorDashboardIC = () => {
                         <div className="flex items-center space-x-4 text-sm text-gray-600">
                           <span className="flex items-center">
                             <FileText className="h-4 w-4 mr-1" />
-                            {projeto.documentos} documentos
+                            {projeto.documentos_count || 0} documentos
                           </span>
-                          <span className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-1" />
-                            Última postagem: {new Date(projeto.ultimaPostagem).toLocaleDateString()}
-                          </span>
+                          {projeto.ultima_postagem && (
+                            <span className="flex items-center">
+                              <Calendar className="h-4 w-4 mr-1" />
+                              Última postagem: {new Date(projeto.ultima_postagem).toLocaleDateString()}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="flex space-x-3">
-                        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        <button 
+                          onClick={() => window.location.href = `/projeto/${projeto.id}/documentos`}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
                           Acompanhar Projeto
                         </button>
-                        <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                        <button 
+                          onClick={() => window.location.href = `/projeto/${projeto.id}/documentos`}
+                          className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                        >
                           Ver Documentos
                         </button>
                       </div>

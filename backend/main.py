@@ -4,8 +4,13 @@ Ponto de entrada principal da aplicação FastAPI
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.api.routes.auth import router as auth_router
+from app.api.routes.projetos import router as projetos_router
+from app.api.routes.perfis import router as perfis_router
+from app.api.routes.documentos import router as documentos_router
 from app.core.config import get_settings
+import os
 
 settings = get_settings()
 
@@ -43,8 +48,17 @@ def create_application() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Criar diretório de uploads se não existir
+    os.makedirs("uploads", exist_ok=True)
+    
+    # Servir arquivos estáticos (uploads)
+    application.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
     # Incluir rotas da API
     application.include_router(auth_router, prefix=settings.API_V1_STR)
+    application.include_router(projetos_router, prefix=settings.API_V1_STR)
+    application.include_router(perfis_router, prefix=settings.API_V1_STR)
+    application.include_router(documentos_router, prefix=settings.API_V1_STR)
 
     @application.get("/")
     async def root():
@@ -52,15 +66,6 @@ def create_application() -> FastAPI:
         Rota raiz - redireciona para o frontend (Home)
         """
         return RedirectResponse(url=settings.FRONTEND_URL)
-        # """
-        # Rota raiz - redireciona para login
-        # """
-        # return {
-        #     "message": "IBMEC Authentication API",
-        #     "status": "online",
-        #     "version": "1.0.0",
-        #     "login_url": f"{settings.API_V1_STR}/auth/microsoft-login"
-        # }
 
     @application.get("/health")
     async def health_check():

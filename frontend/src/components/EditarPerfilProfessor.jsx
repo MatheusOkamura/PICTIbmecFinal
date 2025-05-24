@@ -15,6 +15,19 @@ const EditarPerfilProfessor = () => {
   const [novaArea, setNovaArea] = useState('');
   const [salvando, setSalvando] = useState(false);
 
+  // Função para fazer requisições autenticadas
+  const fetchAuth = async (url, options = {}) => {
+    const token = localStorage.getItem('token');
+    return fetch(url, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...options.headers
+      }
+    });
+  };
+
   useEffect(() => {
     // Obter dados do usuário do token
     const token = localStorage.getItem('token');
@@ -23,21 +36,33 @@ const EditarPerfilProfessor = () => {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setUser(payload);
         
-        // Preencher dados atuais
-        setPerfil({
-          nome: payload.name || '',
-          email: payload.email || '',
-          telefone: '', // Buscar do banco
-          titulacao: payload.titulacao || '',
-          lattes_url: '',
-          biografia: '',
-          areas_interesse: payload.area_pesquisa ? [payload.area_pesquisa] : []
-        });
+        // Carregar perfil da API
+        carregarPerfil();
       } catch (error) {
         console.error('Erro ao decodificar token:', error);
       }
     }
   }, []);
+
+  const carregarPerfil = async () => {
+    try {
+      const response = await fetchAuth('http://localhost:8000/api/v1/perfis/meu-perfil');
+      if (response.ok) {
+        const perfilData = await response.json();
+        setPerfil({
+          nome: perfilData.nome || '',
+          email: perfilData.email || '',
+          telefone: perfilData.telefone || '',
+          titulacao: perfilData.titulacao || '',
+          lattes_url: perfilData.lattes_url || '',
+          biografia: perfilData.biografia || '',
+          areas_interesse: perfilData.areas_interesse || []
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar perfil:', error);
+    }
+  };
 
   const adicionarArea = () => {
     if (novaArea.trim() && !perfil.areas_interesse.includes(novaArea.trim())) {
@@ -59,19 +84,24 @@ const EditarPerfilProfessor = () => {
   const handleSalvar = async () => {
     setSalvando(true);
     
-    // Simulação de salvamento - aqui você faria a requisição para a API
     try {
-      // await api.updateProfessorProfile(perfil);
-      
-      setTimeout(() => {
-        setSalvando(false);
+      const response = await fetchAuth('http://localhost:8000/api/v1/perfis/atualizar-professor', {
+        method: 'PUT',
+        body: JSON.stringify(perfil)
+      });
+
+      if (response.ok) {
         alert('Perfil atualizado com sucesso!');
         window.history.back();
-      }, 1000);
-      
+      } else {
+        const error = await response.json();
+        alert(`Erro: ${error.detail}`);
+      }
     } catch (error) {
-      setSalvando(false);
+      console.error('Erro ao salvar perfil:', error);
       alert('Erro ao salvar perfil. Tente novamente.');
+    } finally {
+      setSalvando(false);
     }
   };
 

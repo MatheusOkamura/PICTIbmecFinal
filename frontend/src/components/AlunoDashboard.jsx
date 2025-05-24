@@ -9,47 +9,8 @@ const AlunoDashboardIC = () => {
   const [showCadastrarProjeto, setShowCadastrarProjeto] = useState(false);
 
   // Estados para projetos
-  const [meusProjetos, setMeusProjetos] = useState([
-    {
-      id: 1,
-      titulo: "Sistema de Monitoramento Ambiental IoT",
-      orientador: "Prof. Dr. Carlos Silva",
-      status: "ativo",
-      dataSubmissao: "2024-05-15",
-      dataAprovacao: "2024-05-18",
-      descricao: "Desenvolvimento de sistema IoT para monitoramento de qualidade do ar no campus...",
-      documentos: 2,
-      ultimaPostagem: "2024-05-20"
-    }
-  ]);
-
-  // Lista de professores disponíveis
-  const [professores, setProfessores] = useState([
-    {
-      id: 1,
-      nome: "Prof. Dr. Ana Santos",
-      email: "ana.santos@ibmec.edu.br",
-      areas: ["Inteligência Artificial", "Machine Learning", "Análise de Dados"],
-      titulacao: "Doutora em Ciência da Computação",
-      projetos_ativos: 3
-    },
-    {
-      id: 2,
-      nome: "Prof. Dr. Carlos Silva",
-      email: "carlos.silva@ibmec.edu.br", 
-      areas: ["IoT", "Sistemas Embarcados", "Redes"],
-      titulacao: "Doutor em Engenharia Elétrica",
-      projetos_ativos: 2
-    },
-    {
-      id: 3,
-      nome: "Prof. Dra. Maria Oliveira",
-      email: "maria.oliveira@ibmec.edu.br",
-      areas: ["Desenvolvimento Web", "UI/UX", "Frontend"],
-      titulacao: "Doutora em Design Digital",
-      projetos_ativos: 4
-    }
-  ]);
+  const [meusProjetos, setMeusProjetos] = useState([]);
+  const [professores, setProfessores] = useState([]);
 
   const [novoProjeto, setNovoProjeto] = useState({
     titulo: '',
@@ -57,6 +18,20 @@ const AlunoDashboardIC = () => {
     orientador_id: ''
   });
 
+  // Função para fazer requisições autenticadas
+  const fetchAuth = async (url, options = {}) => {
+    const token = localStorage.getItem('token');
+    return fetch(url, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...options.headers
+      }
+    });
+  };
+
+  // Carregar dados iniciais
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
@@ -71,12 +46,37 @@ const AlunoDashboardIC = () => {
         }
         
         localStorage.setItem('token', token);
+        
+        // Carregar dados da API
+        carregarDados();
       } catch (error) {
         console.error('Erro ao decodificar token:', error);
       }
+    } else {
+      carregarDados();
     }
     setLoading(false);
   }, []);
+
+  const carregarDados = async () => {
+    try {
+      // Carregar meus projetos
+      const projetosRes = await fetchAuth('http://localhost:8000/api/v1/projetos/meus-projetos');
+      if (projetosRes.ok) {
+        const projetos = await projetosRes.json();
+        setMeusProjetos(projetos);
+      }
+
+      // Carregar professores
+      const professoresRes = await fetchAuth('http://localhost:8000/api/v1/projetos/orientadores');
+      if (professoresRes.ok) {
+        const profs = await professoresRes.json();
+        setProfessores(profs);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -89,27 +89,39 @@ const AlunoDashboardIC = () => {
     localStorage.setItem('welcome_modal_dismissed_aluno', 'true');
   };
 
-  const handleSubmitProjeto = () => {
+  const handleSubmitProjeto = async () => {
     if (!novoProjeto.titulo || !novoProjeto.descricao || !novoProjeto.orientador_id) {
       alert('Por favor, preencha todos os campos!');
       return;
     }
     
-    const orientador = professores.find(p => p.id === parseInt(novoProjeto.orientador_id));
-    
-    const projeto = {
-      id: Date.now(),
-      ...novoProjeto,
-      orientador: orientador.nome,
-      status: 'pendente',
-      dataSubmissao: new Date().toISOString().split('T')[0],
-      documentos: 0
-    };
+    try {
+      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/cadastrar', {
+        method: 'POST',
+        body: JSON.stringify({
+          titulo: novoProjeto.titulo,
+          descricao: novoProjeto.descricao,
+          orientador_id: parseInt(novoProjeto.orientador_id)
+        })
+      });
 
-    setMeusProjetos(prev => [...prev, projeto]);
-    setNovoProjeto({ titulo: '', descricao: '', orientador_id: '' });
-    setShowCadastrarProjeto(false);
-    alert('Projeto submetido com sucesso! Aguarde a aprovação do orientador.');
+      if (response.ok) {
+        alert('Projeto submetido com sucesso! Aguarde a aprovação do orientador.');
+        setNovoProjeto({ titulo: '', descricao: '', orientador_id: '' });
+        setShowCadastrarProjeto(false);
+        carregarDados(); // Recarregar projetos
+      } else {
+        const error = await response.json();
+        alert(`Erro: ${error.detail}`);
+      }
+    } catch (error) {
+      console.error('Erro ao submeter projeto:', error);
+      alert('Erro ao submeter projeto. Tente novamente.');
+    }
+  };
+
+  const abrirEditarPerfil = () => {
+    window.location.href = '/aluno/editar-perfil';
   };
 
   if (loading) {
@@ -207,7 +219,7 @@ const AlunoDashboardIC = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Documentos</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {meusProjetos.reduce((acc, p) => acc + (p.documentos || 0), 0)}
+                  {meusProjetos.reduce((acc, p) => acc + (p.documentos_count || 0), 0)}
                 </p>
               </div>
             </div>
@@ -232,7 +244,10 @@ const AlunoDashboardIC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Perfil</p>
-                <button className="text-sm text-green-600 hover:text-green-800 font-medium">
+                <button 
+                  onClick={abrirEditarPerfil}
+                  className="text-sm text-green-600 hover:text-green-800 font-medium"
+                >
                   Editar
                 </button>
               </div>
@@ -300,10 +315,10 @@ const AlunoDashboardIC = () => {
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900 mb-2">{projeto.titulo}</h3>
                           <p className="text-sm text-gray-600">
-                            <strong>Orientador:</strong> {projeto.orientador}
+                            <strong>Orientador:</strong> {projeto.orientador_nome}
                           </p>
                           <p className="text-sm text-gray-600">
-                            <strong>Submetido em:</strong> {new Date(projeto.dataSubmissao).toLocaleDateString()}
+                            <strong>Submetido em:</strong> {new Date(projeto.data_submissao).toLocaleDateString()}
                           </p>
                         </div>
                         <span className={`text-xs font-medium px-2.5 py-0.5 rounded ${
@@ -323,12 +338,14 @@ const AlunoDashboardIC = () => {
                           <div className="flex items-center space-x-4 text-sm text-gray-600">
                             <span className="flex items-center">
                               <FileText className="h-4 w-4 mr-1" />
-                              {projeto.documentos} documentos
+                              {projeto.documentos_count || 0} documentos
                             </span>
-                            <span className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-1" />
-                              Última postagem: {new Date(projeto.ultimaPostagem).toLocaleDateString()}
-                            </span>
+                            {projeto.ultima_postagem && (
+                              <span className="flex items-center">
+                                <Calendar className="h-4 w-4 mr-1" />
+                                Última postagem: {new Date(projeto.ultima_postagem).toLocaleDateString()}
+                              </span>
+                            )}
                           </div>
                         </div>
                       )}
@@ -342,11 +359,17 @@ const AlunoDashboardIC = () => {
                       <div className="flex space-x-3">
                         {projeto.status === 'ativo' && (
                           <>
-                            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2">
+                            <button 
+                              onClick={() => window.location.href = `/projeto/${projeto.id}/documentos`}
+                              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                            >
                               <Upload className="h-4 w-4" />
                               <span>Upload Documento</span>
                             </button>
-                            <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                            <button 
+                              onClick={() => window.location.href = `/projeto/${projeto.id}`}
+                              className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                            >
                               Ver Projeto
                             </button>
                           </>
@@ -384,7 +407,7 @@ const AlunoDashboardIC = () => {
                     <div className="mb-4">
                       <h4 className="text-sm font-semibold text-gray-900 mb-2">Áreas de Interesse:</h4>
                       <div className="flex flex-wrap gap-2">
-                        {professor.areas.map((area, index) => (
+                        {professor.areas && professor.areas.map((area, index) => (
                           <span 
                             key={index}
                             className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded"
@@ -452,7 +475,7 @@ const AlunoDashboardIC = () => {
                   <option value="">Selecione um orientador</option>
                   {professores.map((professor) => (
                     <option key={professor.id} value={professor.id}>
-                      {professor.nome} - {professor.areas.join(', ')}
+                      {professor.nome} - {professor.area_pesquisa}
                     </option>
                   ))}
                 </select>

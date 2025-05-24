@@ -21,16 +21,27 @@ const EditarPerfilAluno = () => {
 
   const cursos = [
     'Administração',
-    'Ciência da Computação',
+    'Arquitetura',
+    'Ciência de Dados e IA',
+    'Ciências Econômicas',
     'Engenharia de Produção',
-    'Engenharia Civil',
-    'Engenharia Elétrica',
+    'Engenharia de Computação',
     'Engenharia de Software',
-    'Marketing',
-    'Economia',
-    'Direito',
-    'Design'
+    'Direito'
   ];
+
+  // Função para fazer requisições autenticadas
+  const fetchAuth = async (url, options = {}) => {
+    const token = localStorage.getItem('token');
+    return fetch(url, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...options.headers
+      }
+    });
+  };
 
   useEffect(() => {
     // Obter dados do usuário do token
@@ -40,25 +51,37 @@ const EditarPerfilAluno = () => {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setUser(payload);
         
-        // Preencher dados atuais
-        setPerfil({
-          nome: payload.name || '',
-          email: payload.email || '',
-          telefone: '',
-          data_nascimento: '',
-          curso: payload.curso || '',
-          semestre: payload.semestre || 1,
-          periodo: 'matutino',
-          biografia: '',
-          interesses_pesquisa: [],
-          linkedin_url: '',
-          github_url: ''
-        });
+        // Carregar perfil da API
+        carregarPerfil();
       } catch (error) {
         console.error('Erro ao decodificar token:', error);
       }
     }
   }, []);
+
+  const carregarPerfil = async () => {
+    try {
+      const response = await fetchAuth('http://localhost:8000/api/v1/perfis/meu-perfil');
+      if (response.ok) {
+        const perfilData = await response.json();
+        setPerfil({
+          nome: perfilData.nome || '',
+          email: perfilData.email || '',
+          telefone: perfilData.telefone || '',
+          data_nascimento: perfilData.data_nascimento || '',
+          curso: perfilData.curso || '',
+          semestre: perfilData.semestre || 1,
+          periodo: perfilData.periodo || 'matutino',
+          biografia: perfilData.biografia || '',
+          interesses_pesquisa: perfilData.interesses_pesquisa || [],
+          linkedin_url: perfilData.linkedin_url || '',
+          github_url: perfilData.github_url || ''
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar perfil:', error);
+    }
+  };
 
   const adicionarInteresse = () => {
     if (novoInteresse.trim() && !perfil.interesses_pesquisa.includes(novoInteresse.trim())) {
@@ -80,19 +103,24 @@ const EditarPerfilAluno = () => {
   const handleSalvar = async () => {
     setSalvando(true);
     
-    // Simulação de salvamento - aqui você faria a requisição para a API
     try {
-      // await api.updateAlunoProfile(perfil);
-      
-      setTimeout(() => {
-        setSalvando(false);
+      const response = await fetchAuth('http://localhost:8000/api/v1/perfis/atualizar-aluno', {
+        method: 'PUT',
+        body: JSON.stringify(perfil)
+      });
+
+      if (response.ok) {
         alert('Perfil atualizado com sucesso!');
         window.history.back();
-      }, 1000);
-      
+      } else {
+        const error = await response.json();
+        alert(`Erro: ${error.detail}`);
+      }
     } catch (error) {
-      setSalvando(false);
+      console.error('Erro ao salvar perfil:', error);
       alert('Erro ao salvar perfil. Tente novamente.');
+    } finally {
+      setSalvando(false);
     }
   };
 
