@@ -1,4 +1,4 @@
-# 🎓 IBMEC Authentication System
+# 🎓 PICT IBMEC 
 
 Sistema completo de autenticação e dashboards para professores e alunos do IBMEC usando Microsoft Azure AD.
 
