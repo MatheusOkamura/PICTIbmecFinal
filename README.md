@@ -1,5 +1,8 @@
 # 🎓 PICT IBMEC 
 
+
+https://blog.ibmec.br/conteudo-gratuito/fique-por-dentro-inscricoes-abertas-para-o-pict-2025-ibmec-sp/
+
 Sistema completo de autenticação e dashboards para professores e alunos do IBMEC usando Microsoft Azure AD.
 
 ## 🚀 Instalação e Execução
