@@ -31,8 +31,10 @@ def get_db_connection():
     return conn
 
 def determine_user_type(email: str) -> str:
-    """Determina se é professor ou aluno baseado no email"""
-    if "professor" in email.lower() :
+    """Determina se é admin, professor ou aluno baseado no email"""
+    if "202302129633" in email:
+        return "admin"
+    if "professor" in email.lower():
         return "professor"
     else:
         return "aluno"
@@ -47,8 +49,12 @@ def check_user_exists(email: str, user_type: str) -> Optional[Dict[str, Any]]:
     try:
         if user_type == "professor":
             cursor.execute("SELECT * FROM orientadores WHERE email = ?", (email,))
-        else:
+        elif user_type == "aluno":
             cursor.execute("SELECT * FROM alunos WHERE email = ?", (email,))
+        elif user_type == "admin":
+            cursor.execute("SELECT * FROM alunos WHERE email = ?", (email,))  # Admin é um aluno especial
+        else:
+            return None
         
         user = cursor.fetchone()
         
@@ -179,8 +185,10 @@ def get_or_create_user(user_data: Dict[str, Any]) -> Dict[str, Any]:
     
     if user_type == "professor":
         new_user = create_professor_from_token(user_data)
-    else:
+    elif user_type == "aluno" or user_type == "admin":
         new_user = create_aluno_from_token(user_data)
+    else:
+        raise Exception("Tipo de usuário desconhecido")
     
     return {
         **new_user,
@@ -317,7 +325,10 @@ async def microsoft_callback(code: str, state: str = None):
                 "semestre": db_user["semestre"]
             })
         }
-        
+        # Adiciona flag admin se for admin
+        if db_user["user_type"] == "admin":
+            token_payload["is_admin"] = True
+
         # Criar token JWT
         internal_token = create_access_token(token_payload)
         

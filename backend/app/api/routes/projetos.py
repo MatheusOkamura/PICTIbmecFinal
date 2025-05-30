@@ -75,8 +75,8 @@ async def listar_orientadores(current_user: dict = Depends(get_current_user)):
 @router.post("/cadastrar")
 async def cadastrar_projeto(projeto: ProjetoCadastro, current_user: dict = Depends(get_current_user)):
     """Cadastra um novo projeto"""
-    if current_user.get('user_type') != 'aluno':
-        raise HTTPException(status_code=403, detail="Apenas alunos podem cadastrar projetos")
+    if current_user.get('user_type') not in ('aluno', 'admin'):
+        raise HTTPException(status_code=403, detail="Apenas alunos ou admin podem cadastrar projetos")
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -209,5 +209,55 @@ async def aprovar_projeto(projeto_id: int, current_user: dict = Depends(get_curr
         
         conn.commit()
         return {"message": "Projeto aprovado com sucesso"}
+    finally:
+        conn.close()
+
+@router.get("/todos-pendentes")
+async def todos_projetos_pendentes(current_user: dict = Depends(get_current_user)):
+    """Lista todos os projetos pendentes (admin)"""
+    if current_user.get('user_type') != 'admin':
+        raise HTTPException(status_code=403, detail="Apenas admin pode acessar todos os projetos pendentes")
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT p.*, a.nome as aluno_nome, a.matricula, o.nome as orientador_nome
+            FROM projetos p
+            JOIN alunos a ON p.aluno_id = a.id
+            JOIN orientadores o ON p.orientador_id = o.id
+            WHERE p.status = 'pendente'
+            ORDER BY p.data_submissao DESC
+        """)
+        projetos = []
+        for row in cursor.fetchall():
+            projeto = dict(row)
+            projetos.append(projeto)
+        return projetos
+    finally:
+        conn.close()
+
+@router.get("/todos-ativos")
+async def todos_projetos_ativos(current_user: dict = Depends(get_current_user)):
+    """Lista todos os projetos ativos (admin)"""
+    if current_user.get('user_type') != 'admin':
+        raise HTTPException(status_code=403, detail="Apenas admin pode acessar todos os projetos ativos")
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT p.*, a.nome as aluno_nome, a.matricula, o.nome as orientador_nome,
+                   (SELECT COUNT(*) FROM documentos WHERE projeto_id = p.id) as documentos_count,
+                   (SELECT MAX(data_upload) FROM documentos WHERE projeto_id = p.id) as ultima_postagem
+            FROM projetos p
+            JOIN alunos a ON p.aluno_id = a.id
+            JOIN orientadores o ON p.orientador_id = o.id
+            WHERE p.status = 'ativo'
+            ORDER BY p.data_aprovacao DESC
+        """)
+        projetos = []
+        for row in cursor.fetchall():
+            projeto = dict(row)
+            projetos.append(projeto)
+        return projetos
     finally:
         conn.close()

@@ -4,6 +4,7 @@ import PortalICLanding from './components/Home';
 import LoginPage from './components/LoginPage';
 import AlunoDashboardIC from './components/AlunoDashboard';
 import ProfessorDashboardIC from './components/ProfessorDashboard';
+import AdminDashboardIC from './components/AdminDashboard';
 import EditarPerfilAluno from './components/EditarPerfilAluno';
 import EditarPerfilProfessor from './components/EditarPerfilProfessor';
 import DocumentosProjeto from './components/DocumentosProjeto';
@@ -20,6 +21,7 @@ function App() {
         <Route path="/professor/editar-perfil" element={<EditarPerfilProfessor />} />
         <Route path="/projeto/:id" element={<DocumentosProjeto />} />
         <Route path="/projeto/:id/documentos" element={<DocumentosProjeto />} />
+        <Route path="/adminDashboard" element={<AdminDashboardIC />} />
       </Routes>
     </Router>
   );

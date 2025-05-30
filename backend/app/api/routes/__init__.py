@@ -75,8 +75,8 @@ async def listar_orientadores(current_user: dict = Depends(get_current_user)):
 @router.post("/cadastrar")
 async def cadastrar_projeto(projeto: ProjetoCadastro, current_user: dict = Depends(get_current_user)):
     """Cadastra um novo projeto"""
-    if current_user.get('user_type') != 'aluno':
-        raise HTTPException(status_code=403, detail="Apenas alunos podem cadastrar projetos")
+    if current_user.get('user_type') not in ('aluno', 'admin'):
+        raise HTTPException(status_code=403, detail="Apenas alunos ou admin podem cadastrar projetos")
     
     conn = get_db_connection()
     cursor = conn.cursor()

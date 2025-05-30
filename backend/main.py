@@ -18,6 +18,8 @@ def determine_user_role(email: str) -> str:
     """
     Determina o perfil do usuário baseado no email
     """
+    if "202302129633" in email:
+        return "admin"
     if "professor" in email.lower():
         return "professor"
     else:
@@ -82,6 +84,9 @@ def create_application() -> FastAPI:
 
 app = create_application()
 
+# Remova ou ajuste as rotas /admin/dashboard e /api/v1/admin/dashboard se não forem usadas no frontend.
+# O frontend deve acessar diretamente /adminDashboard, não /admin/dashboard.
+
 @app.get("/auth/redirect")
 async def final_redirect(token: str, email: str):
     """
@@ -89,12 +94,15 @@ async def final_redirect(token: str, email: str):
     """
     role = determine_user_role(email)
     frontend_url = settings.FRONTEND_URL
-    
-    if role == "professor":
+
+    # Corrija o caminho para bater com a rota do frontend (React Router)
+    if role == "admin":
+        redirect_url = f"{frontend_url}/adminDashboard?token={token}"
+    elif role == "professor":
         redirect_url = f"{frontend_url}/professor/dashboard?token={token}"
     else:  # aluno
         redirect_url = f"{frontend_url}/aluno/dashboard?token={token}"
-    
+
     return RedirectResponse(url=redirect_url)
 
 @app.get("/auth/callback")
