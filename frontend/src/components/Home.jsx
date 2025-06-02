@@ -1,7 +1,9 @@
 import React from 'react';
 import { GraduationCap, Users, BookOpen, Award, CheckCircle, ArrowRight, LogIn, Search, Calendar, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
+  const navigate = useNavigate();
   const handleLogin = () => {
     window.location.href = 'http://localhost:8000/api/v1/auth/microsoft-login';
   };
@@ -46,8 +48,12 @@ const Home = () => {
                 <LogIn className="h-5 w-5" />
                 <span>Acessar Portal</span>
               </button>
-              <button className="w-full sm:w-auto bg-white text-blue-600 border border-blue-600 px-8 py-3 rounded-lg hover:bg-blue-50 transition-colors">
-                Saiba Mais
+              <button
+                onClick={() => navigate('/edicoes-anteriores')}
+                className="w-full sm:w-auto bg-white text-blue-600 border border-blue-600 px-8 py-3 rounded-lg hover:bg-blue-50 transition-colors flex items-center justify-center space-x-2"
+              >
+                <BookOpen className="h-5 w-5" />
+                <span>Edições Anteriores & Editais</span>
               </button>
             </div>
           </div>

@@ -63,6 +63,16 @@ async def upload_documento(
         if not projeto:
             raise HTTPException(status_code=404, detail="Projeto não encontrado")
         
+        # NOVO: Verificar se existe pelo menos uma atividade criada pelo professor para este projeto
+        cursor.execute("""
+            SELECT COUNT(*) as total_atividades
+            FROM atividades
+            WHERE projeto_id = ? AND aluno_id = ? AND professor_id = ?
+        """, (projeto_id, current_user['user_id'], projeto['orientador_id']))
+        atividades = cursor.fetchone()
+        if not atividades or atividades['total_atividades'] == 0:
+            raise HTTPException(status_code=403, detail="Você só pode enviar documentos quando o professor criar uma entrega para este projeto.")
+
         # Criar diretório se não existir
         upload_dir = f"uploads/projeto_{projeto_id}"
         os.makedirs(upload_dir, exist_ok=True)

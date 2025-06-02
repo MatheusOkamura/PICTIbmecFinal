@@ -8,6 +8,7 @@ import AdminDashboardIC from './components/AdminDashboard';
 import EditarPerfilAluno from './components/EditarPerfilAluno';
 import EditarPerfilProfessor from './components/EditarPerfilProfessor';
 import DocumentosProjeto from './components/DocumentosProjeto';
+import ProjetosAnteriores from './components/ProjetosAnteriores';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/projeto/:id" element={<DocumentosProjeto />} />
         <Route path="/projeto/:id/documentos" element={<DocumentosProjeto />} />
         <Route path="/adminDashboard" element={<AdminDashboardIC />} />
+        <Route path="/edicoes-anteriores" element={<ProjetosAnteriores />} />
       </Routes>
     </Router>
   );

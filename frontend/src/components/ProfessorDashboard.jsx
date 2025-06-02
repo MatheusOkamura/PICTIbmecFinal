@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, GraduationCap, Users, BookOpen, Calendar, Settings, LogOut, Bell, Search, CheckCircle, Clock, Edit3, FileText, MessageSquare } from 'lucide-react';
+import { User, GraduationCap, Users, BookOpen, Calendar, Settings, LogOut, Bell, Search, CheckCircle, Clock, Edit3, FileText, MessageSquare, PlusCircle } from 'lucide-react';
 
 const ProfessorDashboardIC = () => {
   const [user, setUser] = useState(null);
@@ -10,6 +10,15 @@ const ProfessorDashboardIC = () => {
   // Estados para projetos
   const [projetosPendentes, setProjetosPendentes] = useState([]);
   const [projetosAtivos, setProjetosAtivos] = useState([]);
+
+  // Estados para atividades
+  const [showAtividadeModal, setShowAtividadeModal] = useState(false);
+  const [atividadeData, setAtividadeData] = useState({
+    titulo: '',
+    descricao: '',
+    projeto_id: ''
+  });
+  const [enviandoAtividade, setEnviandoAtividade] = useState(false);
 
   // Função para fazer requisições autenticadas
   const fetchAuth = async (url, options = {}) => {
@@ -103,6 +112,32 @@ const ProfessorDashboardIC = () => {
 
   const abrirEditarPerfil = () => {
     window.location.href = '/professor/editar-perfil';
+  };
+
+  // Enviar atividade para o backend
+  const handleEnviarAtividade = async () => {
+    if (!atividadeData.titulo || !atividadeData.descricao || !atividadeData.projeto_id) {
+      alert('Preencha todos os campos da atividade!');
+      return;
+    }
+    setEnviandoAtividade(true);
+    try {
+      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/enviar-atividade', {
+        method: 'POST',
+        body: JSON.stringify(atividadeData)
+      });
+      if (response.ok) {
+        alert('Atividade enviada com sucesso!');
+        setShowAtividadeModal(false);
+        setAtividadeData({ titulo: '', descricao: '', projeto_id: '' });
+      } else {
+        const error = await response.json();
+        alert(`Erro: ${error.detail}`);
+      }
+    } catch (error) {
+      alert('Erro ao enviar atividade.');
+    }
+    setEnviandoAtividade(false);
   };
 
   if (loading) {
@@ -318,6 +353,15 @@ const ProfessorDashboardIC = () => {
 
             {activeTab === 'ativos' && (
               <div className="space-y-4">
+                <div className="mb-4 flex justify-end">
+                  <button
+                    onClick={() => setShowAtividadeModal(true)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                  >
+                    <PlusCircle className="h-5 w-5" />
+                    <span>Criar Atividade</span>
+                  </button>
+                </div>
                 {projetosAtivos.length === 0 ? (
                   <div className="text-center py-12">
                     <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -403,6 +447,81 @@ const ProfessorDashboardIC = () => {
               >
                 Começar a usar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Criar Atividade */}
+      {showAtividadeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Criar Nova Atividade</h3>
+              <button
+                onClick={() => setShowAtividadeModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Projeto / Aluno
+                </label>
+                <select
+                  value={atividadeData.projeto_id}
+                  onChange={e => setAtividadeData(prev => ({ ...prev, projeto_id: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Selecione um projeto/aluno</option>
+                  {projetosAtivos.map(proj => (
+                    <option key={proj.id} value={proj.id}>
+                      {proj.titulo} - {proj.aluno_nome} ({proj.matricula})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Título da Atividade
+                </label>
+                <input
+                  type="text"
+                  value={atividadeData.titulo}
+                  onChange={e => setAtividadeData(prev => ({ ...prev, titulo: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Digite o título da atividade"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Descrição
+                </label>
+                <textarea
+                  rows={4}
+                  value={atividadeData.descricao}
+                  onChange={e => setAtividadeData(prev => ({ ...prev, descricao: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Descreva a atividade a ser realizada pelo aluno"
+                />
+              </div>
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={handleEnviarAtividade}
+                  disabled={enviandoAtividade}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
+                >
+                  {enviandoAtividade ? 'Enviando...' : 'Enviar Atividade'}
+                </button>
+                <button
+                  onClick={() => setShowAtividadeModal(false)}
+                  className="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
             </div>
           </div>
         </div>

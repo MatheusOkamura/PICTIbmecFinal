@@ -7,6 +7,7 @@ const AlunoDashboardIC = () => {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [activeTab, setActiveTab] = useState('meus-projetos');
   const [showCadastrarProjeto, setShowCadastrarProjeto] = useState(false);
+  const [inscricaoPeriodo, setInscricaoPeriodo] = useState({ data_limite: '', aberto: true });
 
   // Estados para projetos
   const [meusProjetos, setMeusProjetos] = useState([]);
@@ -73,9 +74,21 @@ const AlunoDashboardIC = () => {
         const profs = await professoresRes.json();
         setProfessores(profs);
       }
+
+      // Carregar período de inscrição
+      carregarPeriodoInscricao();
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
     }
+  };
+
+  const carregarPeriodoInscricao = async () => {
+    try {
+      const res = await fetchAuth('http://localhost:8000/api/v1/projetos/inscricao-periodo');
+      if (res.ok) {
+        setInscricaoPeriodo(await res.json());
+      }
+    } catch (e) {}
   };
 
   const handleLogout = () => {
@@ -123,6 +136,17 @@ const AlunoDashboardIC = () => {
   const abrirEditarPerfil = () => {
     window.location.href = '/aluno/editar-perfil';
   };
+
+  // Verifica se pode cadastrar projeto
+  const podeCadastrarProjeto = (() => {
+    if (!inscricaoPeriodo.aberto) return false;
+    if (!inscricaoPeriodo.data_limite) return true;
+    try {
+      return new Date() <= new Date(inscricaoPeriodo.data_limite);
+    } catch {
+      return true;
+    }
+  })();
 
   if (loading) {
     return (
@@ -258,12 +282,27 @@ const AlunoDashboardIC = () => {
         {/* Main Actions */}
         <div className="mb-8">
           <button
-            onClick={() => setShowCadastrarProjeto(true)}
-            className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+            onClick={() => podeCadastrarProjeto && setShowCadastrarProjeto(true)}
+            className={`px-6 py-3 rounded-lg flex items-center space-x-2 transition-colors
+              ${podeCadastrarProjeto
+                ? 'bg-green-600 text-white hover:bg-green-700'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'}
+            `}
+            disabled={!podeCadastrarProjeto}
+            title={
+              podeCadastrarProjeto
+                ? 'Cadastrar novo projeto'
+                : 'Inscrições encerradas no momento'
+            }
           >
             <Plus className="h-5 w-5" />
             <span>Cadastrar Novo Projeto</span>
           </button>
+          {!podeCadastrarProjeto && (
+            <div className="text-sm text-red-700 mt-2">
+              Inscrições encerradas no momento. Aguarde a abertura do próximo período.
+            </div>
+          )}
         </div>
 
         {/* Tabs */}
@@ -380,7 +419,7 @@ const AlunoDashboardIC = () => {
                       </div>
                     </div>
                   ))
-                )}
+                }
               </div>
             )}
 
