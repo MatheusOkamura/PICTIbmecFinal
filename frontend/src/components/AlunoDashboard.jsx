@@ -419,7 +419,7 @@ const AlunoDashboardIC = () => {
                       </div>
                     </div>
                   ))
-                }
+                )}
               </div>
             )}
 
