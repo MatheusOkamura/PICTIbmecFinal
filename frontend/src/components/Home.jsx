@@ -1,12 +1,56 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { GraduationCap, Users, BookOpen, Award, CheckCircle, ArrowRight, LogIn, Search, Calendar, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
+  const [homeTexts, setHomeTexts] = useState({
+    titulo: 'Portal de Iniciação Científica',
+    subtitulo: 'Conecte-se com orientadores, desenvolva projetos inovadores e dê os primeiros passos na sua carreira de pesquisador.'
+  });
+
+  // Novos estados para os números dinâmicos
+  const [projetosTotal, setProjetosTotal] = useState(0);
+  const [orientadoresTotal, setOrientadoresTotal] = useState(0);
+  const [alunosTotal, setAlunosTotal] = useState(0);
+  const [projetosFinalizados, setProjetosFinalizados] = useState(0);
+
   const navigate = useNavigate();
   const handleLogin = () => {
     window.location.href = 'http://localhost:8000/api/v1/auth/microsoft-login';
   };
+
+  useEffect(() => {
+    const fetchHomeTexts = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/v1/projetos/home-texts');
+        if (response.ok) {
+          const data = await response.json();
+          setHomeTexts(data);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar textos da Home:', error);
+      }
+    };
+
+    // Buscar estatísticas do banco
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/v1/projetos/estatisticas');
+        if (response.ok) {
+          const stats = await response.json();
+          setProjetosTotal(stats.projetos_total || 0);
+          setOrientadoresTotal(stats.orientadores_total || 0);
+          setAlunosTotal(stats.alunos_total || 0);
+          setProjetosFinalizados(stats.projetos_finalizados || 0);
+        }
+      } catch (error) {
+        // Se der erro, mantém os valores padrão
+      }
+    };
+
+    fetchHomeTexts();
+    fetchStats();
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">
@@ -35,10 +79,10 @@ const Home = () => {
           <div className="text-center">
             <GraduationCap className="h-20 w-20 text-blue-600 mx-auto mb-6" />
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-              Portal de Iniciação Científica
+              {homeTexts.titulo}
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Conecte-se com orientadores, desenvolva projetos inovadores e dê os primeiros passos na sua carreira de pesquisador.
+              {homeTexts.subtitulo}
             </p>
             <div className="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
               <button
@@ -119,8 +163,9 @@ const Home = () => {
           </div>
         </div>
       </section>
-
+     
       {/* Process Section */}
+      {/*
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
@@ -133,7 +178,7 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Passo 1 */}
+            {/* Passo 1 *}
             <div className="text-center">
               <div className="bg-blue-600 text-white p-3 rounded-full w-12 h-12 mx-auto mb-4 flex items-center justify-center font-bold">
                 1
@@ -154,7 +199,7 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Passo 2 */}
+            {/* Passo 2 *}
             <div className="text-center">
               <div className="bg-green-600 text-white p-3 rounded-full w-12 h-12 mx-auto mb-4 flex items-center justify-center font-bold">
                 2
@@ -175,7 +220,7 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Passo 3 */}
+            {/* Passo 3 *}
             <div className="text-center">
               <div className="bg-purple-600 text-white p-3 rounded-full w-12 h-12 mx-auto mb-4 flex items-center justify-center font-bold">
                 3
@@ -198,7 +243,68 @@ const Home = () => {
           </div>
         </div>
       </section>
-
+      */}
+      {/* Destaque PICT 2025 */}
+      <section className="py-16 bg-gradient-to-br from-purple-50 to-blue-100">
+        <div className="max-w-3xl mx-auto px-6 rounded-2xl shadow-lg bg-white/90 border border-blue-100">
+          <div className="text-center mb-6">
+            <span className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-bold px-4 py-2 rounded-full uppercase tracking-widest shadow">
+              Fique por dentro | Inscrições abertas para o PICT 2025 – Ibmec SP
+            </span>
+          </div>
+          <h2 className="text-2xl md:text-3xl font-bold text-blue-900 mb-4 text-center">
+            A 6ª edição do Programa de Iniciação Científica e Tecnológica (PICT) já está com inscrições abertas!
+          </h2>
+          <p className="text-gray-700 text-lg mb-4 text-center">
+            Essa é uma oportunidade única para os alunos do Ibmec São Paulo se aprofundarem no universo da pesquisa científica.
+          </p>
+          <p className="text-gray-700 mb-4 text-center">
+            Participar da Iniciação Científica é um diferencial importante para sua carreira. O PICT é uma excelente oportunidade de complementar sua formação acadêmica, proporcionando experiência prática e construção de conhecimento científico.
+          </p>
+          <p className="text-gray-700 mb-4 text-center">
+            Durante o programa, você terá o suporte de um professor pesquisador experiente, que irá orientá-lo no planejamento, na execução e na apresentação do seu estudo científico. Não perca essa chance de enriquecer seu currículo e desenvolver habilidades que farão toda a diferença no mercado de trabalho!
+          </p>
+          <h3 className="text-lg font-semibold text-blue-800 mb-2 mt-6">Como fazer a inscrição no PICT?</h3>
+          <ol className="list-decimal list-inside text-gray-700 mb-4 space-y-1 pl-4">
+            <li>
+              Contatar um professor da área de seu interesse e verificar a disponibilidade para a orientação (<span className="font-medium">Edital &gt; Relação de professores/área</span>);
+            </li>
+            <li>
+              Elaborar uma proposta do projeto para submeter na inscrição;
+            </li>
+            <li>
+              Reunir os documentos necessários para a inscrição;
+            </li>
+            <li>
+              Efetivar a sua inscrição no processo seletivo do PICT conforme orientações do Edital <span className="font-medium">(até 18/11/24)</span>;
+            </li>
+            <li>
+              Preparar a apresentação de seu projeto <span className="font-medium">(fevereiro/2025)</span>.
+            </li>
+          </ol>
+          <p className="text-gray-700 mb-4 text-center">
+            <span className="font-semibold">As inscrições do programa vão até o dia <span className="text-blue-700">18/11/24</span>,</span> e para mais detalhes sobre o PICT 2025, consulte o edital disponível através dos links abaixo:
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6 mb-2">
+            <a
+              href="https://drive.google.com/file/d/1hOlRuJ1D_4Wt8qkCSwX9IVQaBj9bHeJg/view"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg shadow transition-colors text-lg text-center"
+            >
+              Paulista
+            </a>
+            <a
+              href="https://drive.google.com/file/d/1LeuIZ5r9B4dRPgjKqFK4qk1Q2eWS6NQL/view"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg shadow transition-colors text-lg text-center"
+            >
+              Faria Lima
+            </a>
+          </div>
+        </div>
+      </section>
       {/* Benefits Section */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -242,20 +348,20 @@ const Home = () => {
               <div className="text-center">
                 <div className="grid grid-cols-2 gap-6 mb-6">
                   <div>
-                    <div className="text-3xl font-bold text-blue-600 mb-1">150+</div>
-                    <div className="text-sm text-gray-600">Projetos Ativos</div>
+                    <div className="text-3xl font-bold text-blue-600 mb-1">{projetosTotal}</div>
+                    <div className="text-sm text-gray-600">Projetos Ativos/Realizados</div>
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-green-600 mb-1">45+</div>
+                    <div className="text-3xl font-bold text-green-600 mb-1">{orientadoresTotal}</div>
                     <div className="text-sm text-gray-600">Orientadores</div>
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-purple-600 mb-1">300+</div>
+                    <div className="text-3xl font-bold text-purple-600 mb-1">{alunosTotal}</div>
                     <div className="text-sm text-gray-600">Alunos Participantes</div>
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-yellow-600 mb-1">95%</div>
-                    <div className="text-sm text-gray-600">Taxa de Satisfação</div>
+                    <div className="text-3xl font-bold text-yellow-600 mb-1">{projetosFinalizados}</div>
+                    <div className="text-sm text-gray-600">Contribuições Científicas</div>
                   </div>
                 </div>
                 <button

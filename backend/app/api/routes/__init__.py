@@ -211,3 +211,55 @@ async def aprovar_projeto(projeto_id: int, current_user: dict = Depends(get_curr
         return {"message": "Projeto aprovado com sucesso"}
     finally:
         conn.close()
+
+def criar_tabelas_edicoes_anteriores():
+    """Cria as tabelas edicoes_anteriores e projetos_edicao se não existirem"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS edicoes_anteriores (
+                ano INTEGER PRIMARY KEY,
+                edital TEXT
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS projetos_edicao (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ano INTEGER,
+                titulo TEXT,
+                aluno TEXT,
+                orientador TEXT,
+                arquivo TEXT,
+                FOREIGN KEY (ano) REFERENCES edicoes_anteriores(ano)
+            )
+        """)
+        conn.commit()
+    finally:
+        conn.close()
+
+def coletar_edicoes_anteriores():
+    """
+    Retorna as edições anteriores e projetos do banco de dados.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT ano, edital FROM edicoes_anteriores ORDER BY ano DESC")
+        edicoes = []
+        for row in cursor.fetchall():
+            ano = row["ano"]
+            edital = row["edital"]
+            cursor.execute("SELECT titulo, aluno, orientador, arquivo FROM projetos_edicao WHERE ano = ? ORDER BY id ASC", (ano,))
+            projetos = [dict(p) for p in cursor.fetchall()]
+            edicoes.append({
+                "ano": ano,
+                "edital": edital,
+                "projetos": projetos
+            })
+        return edicoes
+    finally:
+        conn.close()
+
+# Chame a função ao importar este módulo para garantir que as tabelas existem
+criar_tabelas_edicoes_anteriores()

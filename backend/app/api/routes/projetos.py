@@ -12,12 +12,15 @@ from app.core.config import get_settings
 from fastapi.responses import FileResponse
 import os
 import json
+from fastapi import UploadFile, File, Form
 
 settings = get_settings()
 router = APIRouter(prefix="/projetos", tags=["Projetos"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 INSCRICAO_FILE = "inscricao_periodo.json"
+HOME_TEXTS_FILE = "home_texts.json"
+EDICOES_TEXTS_FILE = "edicoes_texts.json"
 
 def get_db_connection():
     """Obter conexão com o banco de dados"""
@@ -42,6 +45,18 @@ def get_inscricao_periodo():
 def set_inscricao_periodo(data_limite, aberto):
     with open(INSCRICAO_FILE, "w") as f:
         json.dump({"data_limite": data_limite, "aberto": aberto}, f)
+
+def load_texts(file_path, default_data):
+    """Carrega textos de um arquivo JSON ou retorna dados padrão"""
+    if os.path.exists(file_path):
+        with open(file_path, "r") as f:
+            return json.load(f)
+    return default_data
+
+def save_texts(file_path, data):
+    """Salva textos em um arquivo JSON"""
+    with open(file_path, "w") as f:
+        json.dump(data, f)
 
 # Models
 class ProjetoCadastro(BaseModel):
@@ -444,3 +459,291 @@ async def fechar_inscricao(current_user: dict = Depends(get_current_user)):
     periodo = get_inscricao_periodo()
     set_inscricao_periodo(periodo.get("data_limite"), False)
     return {"message": "Inscrições fechadas"}
+
+@router.get("/home-texts")
+async def get_home_texts():
+    """Retorna os textos da Home"""
+    default_data = {
+        "titulo": "Portal de Iniciação Científica",
+        "subtitulo": "Conecte-se com orientadores, desenvolva projetos inovadores e dê os primeiros passos na sua carreira de pesquisador."
+    }
+    return load_texts(HOME_TEXTS_FILE, default_data)
+
+@router.post("/home-texts")
+async def update_home_texts(data: dict, current_user: dict = Depends(get_current_user)):
+    """Atualiza os textos da Home"""
+    if current_user.get('user_type') != 'admin':
+        raise HTTPException(status_code=403, detail="Apenas admin pode atualizar os textos da Home")
+    updated_data = {
+        "titulo": data.get("titulo", ""),
+        "subtitulo": data.get("subtitulo", "")
+    }
+    save_texts(HOME_TEXTS_FILE, updated_data)
+    return {"message": "Textos da Home atualizados com sucesso"}
+
+# Remover o uso do arquivo edicoes_texts.json para projetos/edições anteriores e usar o banco de dados
+
+# Crie as tabelas no banco de dados (execute isso uma vez no seu SQLite):
+# CREATE TABLE edicoes_anteriores (ano INTEGER PRIMARY KEY, edital TEXT);
+# CREATE TABLE projetos_edicao (
+#     id INTEGER PRIMARY KEY AUTOINCREMENT,
+#     ano INTEGER,
+#     titulo TEXT,
+#     aluno TEXT,
+#     orientador TEXT,
+#     arquivo TEXT,
+#     FOREIGN KEY (ano) REFERENCES edicoes_anteriores(ano)
+# );
+
+@router.get("/edicoes-texts")
+async def get_edicoes_texts():
+    """Retorna os textos e edições da página de Edições Anteriores"""
+    default_data = {
+        "titulo": "Conheça Projetos de Edições Anteriores",
+        "subtitulo": "Veja exemplos de projetos já realizados e acesse os editais das últimas edições do programa de Iniciação Científica.",
+        "edicoes": []
+    }
+    textos = load_texts(EDICOES_TEXTS_FILE, default_data)
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT ano, edital FROM edicoes_anteriores ORDER BY ano DESC")
+        edicoes = []
+        for row in cursor.fetchall():
+            ano = row["ano"]
+            edital = row["edital"]
+            cursor.execute("SELECT titulo, aluno, orientador, arquivo FROM projetos_edicao WHERE ano = ? ORDER BY id ASC", (ano,))
+            projetos = [dict(p) for p in cursor.fetchall()]
+            edicoes.append({
+                "ano": ano,
+                "edital": edital,
+                "projetos": projetos
+            })
+        textos["edicoes"] = edicoes
+        return textos
+    finally:
+        conn.close()
+
+@router.post("/edicoes-texts")
+async def update_edicoes_texts(data: dict, current_user: dict = Depends(get_current_user)):
+    """Atualiza os textos da página de Edições Anteriores (apenas título e subtítulo)"""
+    if current_user.get('user_type') != 'admin':
+        raise HTTPException(status_code=403, detail="Apenas admin pode atualizar os textos da página de Edições Anteriores")
+    updated_data = {
+        "titulo": data.get("titulo", ""),
+        "subtitulo": data.get("subtitulo", "")
+    }
+    save_texts(EDICOES_TEXTS_FILE, updated_data)
+    return {"message": "Textos da página de Edições Anteriores atualizados com sucesso"}
+
+@router.post("/edicoes-anteriores")
+async def add_edicao(data: dict, current_user: dict = Depends(get_current_user)):
+    """Adiciona um novo ano de edição"""
+    if current_user.get('user_type') != 'admin':
+        raise HTTPException(status_code=403, detail="Apenas admin pode adicionar edições")
+    ano = data.get("ano")
+    edital = data.get("edital", None)
+    if not ano:
+        raise HTTPException(status_code=400, detail="Ano é obrigatório")
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT 1 FROM edicoes_anteriores WHERE ano = ?", (ano,))
+        if cursor.fetchone():
+            raise HTTPException(status_code=400, detail="Ano já existe")
+        cursor.execute("INSERT INTO edicoes_anteriores (ano, edital) VALUES (?, ?)", (ano, edital))
+        conn.commit()
+        return {"message": "Edição adicionada com sucesso"}
+    finally:
+        conn.close()
+
+@router.post("/edicoes-anteriores/projetos")
+async def add_projeto_to_edicao(
+    ano: int = Form(...),
+    titulo: str = Form(...),
+    aluno: str = Form(...),
+    orientador: str = Form(...),
+    arquivo: UploadFile = File(None),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Adiciona um novo projeto a uma edição existente, aceitando upload de arquivo.
+    Aceita apenas multipart/form-data (não JSON).
+    """
+    if current_user.get('user_type') != 'admin':
+        raise HTTPException(status_code=403, detail="Apenas admin pode adicionar projetos")
+
+    # Salvar arquivo se enviado
+    arquivo_path = ""
+    if arquivo and arquivo.filename:
+        pasta = f"uploads/edicoes_anteriores/{ano}"
+        os.makedirs(pasta, exist_ok=True)
+        arquivo_path = os.path.join(pasta, arquivo.filename)
+        contents = await arquivo.read()
+        with open(arquivo_path, "wb") as f:
+            f.write(contents)
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT 1 FROM edicoes_anteriores WHERE ano = ?", (ano,))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Ano não encontrado")
+        # Evita duplicidade
+        cursor.execute(
+            "SELECT 1 FROM projetos_edicao WHERE ano = ? AND titulo = ? AND aluno = ? AND orientador = ?",
+            (ano, titulo.strip(), aluno.strip(), orientador.strip())
+        )
+        if cursor.fetchone():
+            raise HTTPException(status_code=409, detail="Projeto já cadastrado para esta edição")
+        cursor.execute(
+            "INSERT INTO projetos_edicao (ano, titulo, aluno, orientador, arquivo) VALUES (?, ?, ?, ?, ?)",
+            (ano, titulo.strip(), aluno.strip(), orientador.strip(), arquivo_path)
+        )
+        conn.commit()
+        return {"message": "Projeto adicionado com sucesso"}
+    finally:
+        conn.close()
+
+@router.post("/edicoes-anteriores/remover")
+async def remover_edicao(data: dict, current_user: dict = Depends(get_current_user)):
+    """Remove uma edição (ano) e todos os projetos associados"""
+    if current_user.get('user_type') != 'admin':
+        raise HTTPException(status_code=403, detail="Apenas admin pode remover edições")
+    ano = data.get("ano")
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM projetos_edicao WHERE ano = ?", (ano,))
+        cursor.execute("DELETE FROM edicoes_anteriores WHERE ano = ?", (ano,))
+        conn.commit()
+        return {"message": "Edição removida com sucesso"}
+    finally:
+        conn.close()
+
+@router.post("/edicoes-anteriores/remover-projeto")
+async def remover_projeto_edicao(data: dict, current_user: dict = Depends(get_current_user)):
+    """Remove um projeto de uma edição"""
+    if current_user.get('user_type') != 'admin':
+        raise HTTPException(status_code=403, detail="Apenas admin pode remover projetos")
+    ano = data.get("ano")
+    idx = data.get("idx")
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT id FROM projetos_edicao WHERE ano = ? ORDER BY id ASC", (ano,))
+        projetos = cursor.fetchall()
+        if idx < 0 or idx >= len(projetos):
+            raise HTTPException(status_code=400, detail="Projeto não encontrado")
+        projeto_id = projetos[idx][0]
+        cursor.execute("DELETE FROM projetos_edicao WHERE id = ?", (projeto_id,))
+        conn.commit()
+        return {"message": "Projeto removido com sucesso"}
+    finally:
+        conn.close()
+
+@router.get("/estatisticas")
+async def estatisticas_portal():
+    """
+    Retorna estatísticas para a home:
+    - projetos_total: projetos em andamento + finalizados
+    - orientadores_total: professores cadastrados
+    - alunos_total: alunos cadastrados
+    - projetos_finalizados: projetos finalizados
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Projetos em andamento (status = 'ativo')
+        cursor.execute("SELECT COUNT(*) FROM projetos WHERE status = 'ativo'")
+        projetos_ativos = cursor.fetchone()[0] or 0
+
+        # Projetos finalizados (status = 'finalizado')
+        cursor.execute("SELECT COUNT(*) FROM projetos WHERE status = 'finalizado'")
+        projetos_finalizados = cursor.fetchone()[0] or 0
+
+        # Total de projetos (ativos + finalizados)
+        projetos_total = projetos_ativos + projetos_finalizados
+
+        # Orientadores cadastrados
+        cursor.execute("SELECT COUNT(*) FROM orientadores")
+        orientadores_total = cursor.fetchone()[0] or 0
+
+        # Alunos cadastrados
+        cursor.execute("SELECT COUNT(*) FROM alunos")
+        alunos_total = cursor.fetchone()[0] or 0
+
+        return {
+            "projetos_total": projetos_total,
+            "orientadores_total": orientadores_total,
+            "alunos_total": alunos_total,
+            "projetos_finalizados": projetos_finalizados
+        }
+    finally:
+        conn.close()
+
+def criar_projetos_finalizados_para_testes():
+    """
+    Cria projetos finalizados diretamente no banco de dados para testes.
+    Execute esta função uma vez (por exemplo, via um shell Python ou endpoint temporário).
+    """
+    projetos = [
+        {
+            "titulo": "Análise de Mercado no E-commerce Brasileiro",
+            "aluno": "João Pedro Alves",
+            "orientador": "Profa. Camila Ferreira",
+            "ano": 2023
+        },
+        {
+            "titulo": "Aplicativo de Apoio para Pessoas com Deficiência Visual",
+            "aluno": "Larissa Duarte",
+            "orientador": "Prof. Eduardo Tavares",
+            "ano": 2023
+        },
+        {
+            "titulo": "Otimização Logística com Machine Learning",
+            "aluno": "Bruno Oliveira",
+            "orientador": "Profa. Juliana Martins",
+            "ano": 2022
+        },
+        {
+            "titulo": "Estudo de Cibersegurança em Pequenas Empresas",
+            "aluno": "Marina Costa",
+            "orientador": "Prof. Leandro Rocha",
+            "ano": 2022
+        },
+        {
+            "titulo": "Análise de Dados em Saúde",
+            "aluno": "Maria Silva",
+            "orientador": "Prof. João Souza",
+            "ano": 2021
+        },
+        {
+            "titulo": "Sistema de Monitoramento Ambiental com IoT",
+            "aluno": "Ana Beatriz Lima",
+            "orientador": "Prof. Ricardo Moreira",
+            "ano": 2021
+        }
+    ]
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        for proj in projetos:
+            cursor.execute("""
+                INSERT INTO projetos (codigo, titulo, descricao, orientador_id, aluno_id, status, data_submissao, data_aprovacao)
+                VALUES (?, ?, ?, NULL, NULL, 'finalizado', ?, ?)
+            """, (
+                f"TESTE{proj['ano']}{proj['titulo'][:3].upper()}",
+                proj["titulo"].strip(),
+                f"Projeto finalizado de {proj['aluno'].strip()} ({proj['ano']})",
+                f"{proj['ano']}-01-01T00:00:00",
+                f"{proj['ano']}-12-31T00:00:00"
+            ))
+        conn.commit()
+        print("Projetos finalizados de teste inseridos com sucesso!")
+    finally:
+        conn.close()
+
+# Para executar, chame criar_projetos_finalizados_para_testes() em um shell Python dentro do projeto:
+# from app.api.routes.projetos import criar_projetos_finalizados_para_testes
+# criar_projetos_finalizados_para_testes()

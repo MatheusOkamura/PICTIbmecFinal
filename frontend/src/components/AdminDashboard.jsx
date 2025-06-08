@@ -15,17 +15,18 @@ const AdminDashboardIC = () => {
 
   // Mock para textos e imagens (você pode integrar com backend depois)
   const [homeTexts, setHomeTexts] = useState({
-    titulo: 'Portal de Iniciação Científica',
-    subtitulo: 'Conecte-se com orientadores, desenvolva projetos inovadores e dê os primeiros passos na sua carreira de pesquisador.',
-    bannerImg: null,
-    bannerImgPreview: null
+    titulo: '',
+    subtitulo: ''
   });
   const [edicoesTexts, setEdicoesTexts] = useState({
     titulo: 'Conheça Projetos de Edições Anteriores',
     subtitulo: 'Veja exemplos de projetos já realizados e acesse os editais das últimas edições do programa de Iniciação Científica.',
     bannerImg: null,
-    bannerImgPreview: null
+    bannerImgPreview: null,
+    edicoes: [] // Lista de edições anteriores
   });
+  const [newEdicao, setNewEdicao] = useState({ ano: '' });
+  const [newProjeto, setNewProjeto] = useState({ titulo: '', aluno: '', orientador: '', arquivo: '', ano: '' });
 
   const fetchAuth = async (url, options = {}) => {
     const token = localStorage.getItem('token');
@@ -57,6 +58,38 @@ const AdminDashboardIC = () => {
     } else {
       carregarDados();
     }
+    setLoading(false);
+    // eslint-disable-next-line
+  }, []);
+
+  useEffect(() => {
+    const fetchHomeTexts = async () => {
+      try {
+        const response = await fetchAuth('http://localhost:8000/api/v1/projetos/home-texts');
+        if (response.ok) {
+          const data = await response.json();
+          setHomeTexts(data); // Atualizar os textos da Home no estado inicial
+        }
+      } catch (error) {
+        console.error('Erro ao carregar textos da Home:', error);
+      }
+    };
+
+    const fetchEdicoesTexts = async () => {
+      try {
+        const response = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-texts');
+        if (response.ok) {
+          const data = await response.json();
+          setEdicoesTexts(data); // Atualizar os textos da página de Edições Anteriores no estado inicial
+        }
+      } catch (error) {
+        console.error('Erro ao carregar textos da página de Edições Anteriores:', error);
+      }
+    };
+
+    fetchHomeTexts();
+    fetchEdicoesTexts();
+    carregarDados();
     setLoading(false);
     // eslint-disable-next-line
   }, []);
@@ -129,13 +162,29 @@ const AdminDashboardIC = () => {
 
   // Handlers for Home texts/images
   const handleHomeTextChange = (e) => setHomeTexts({ ...homeTexts, [e.target.name]: e.target.value });
-  const handleHomeImgChange = (e) => {
-    const file = e.target.files[0];
-    setHomeTexts({ ...homeTexts, bannerImg: file, bannerImgPreview: file ? URL.createObjectURL(file) : null });
-  };
-  const handleSaveHome = () => {
-    alert('Textos e imagem da Home salvos (mock). Implemente integração com backend.');
-    // Aqui você faria o upload e salvaria os textos no backend
+  const handleSaveHome = async () => {
+    try {
+      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/home-texts', {
+        method: 'POST',
+        body: JSON.stringify({
+          titulo: homeTexts.titulo,
+          subtitulo: homeTexts.subtitulo
+        })
+      });
+      if (response.ok) {
+        alert('Textos da Home atualizados com sucesso!');
+        const updatedHomeTexts = await fetchAuth('http://localhost:8000/api/v1/projetos/home-texts');
+        if (updatedHomeTexts.ok) {
+          setHomeTexts(await updatedHomeTexts.json()); // Atualizar o estado local após salvar
+        }
+      } else {
+        const error = await response.json();
+        alert(`Erro: ${error.detail}`);
+      }
+    } catch (error) {
+      console.error('Erro ao salvar textos da Home:', error);
+      alert('Erro ao salvar textos da Home. Tente novamente.');
+    }
   };
 
   // Handlers for Edicoes texts/images
@@ -144,9 +193,131 @@ const AdminDashboardIC = () => {
     const file = e.target.files[0];
     setEdicoesTexts({ ...edicoesTexts, bannerImg: file, bannerImgPreview: file ? URL.createObjectURL(file) : null });
   };
-  const handleSaveEdicoes = () => {
-    alert('Textos e imagem da página de Edições Anteriores salvos (mock). Implemente integração com backend.');
-    // Aqui você faria o upload e salvaria os textos no backend
+  const handleSaveEdicoes = async () => {
+    try {
+      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-texts', {
+        method: 'POST',
+        body: JSON.stringify({
+          titulo: edicoesTexts.titulo,
+          subtitulo: edicoesTexts.subtitulo,
+          edicoes: edicoesTexts.edicoes // Enviar todas as edições e projetos
+        })
+      });
+      if (response.ok) {
+        alert('Alterações na página de Edições Anteriores salvas com sucesso!');
+        const updatedEdicoesTexts = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-texts');
+        if (updatedEdicoesTexts.ok) {
+          setEdicoesTexts(await updatedEdicoesTexts.json()); // Atualizar o estado local após salvar
+        }
+      } else {
+        const error = await response.json();
+        alert(`Erro: ${error.detail}`);
+      }
+    } catch (error) {
+      console.error('Erro ao salvar alterações na página de Edições Anteriores:', error);
+      alert('Erro ao salvar alterações. Tente novamente.');
+    }
+  };
+
+  const handleAddEdicao = async () => {
+    if (!newEdicao.ano) {
+      alert('Preencha o campo de ano para adicionar uma nova edição.');
+      return;
+    }
+    const response = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-anteriores', {
+      method: 'POST',
+      body: JSON.stringify({ ano: newEdicao.ano })
+    });
+    if (response.ok) {
+      alert('Nova edição adicionada com sucesso!');
+      setNewEdicao({ ano: '' });
+      // Atualiza o estado local com as edições atualizadas
+      const updatedEdicoesTexts = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-texts');
+      if (updatedEdicoesTexts.ok) {
+        setEdicoesTexts(await updatedEdicoesTexts.json());
+      }
+    } else {
+      const error = await response.json();
+      alert(`Erro: ${error.detail}`);
+    }
+  };
+
+  const handleAddProjeto = async () => {
+    if (!newProjeto.titulo || !newProjeto.aluno || !newProjeto.orientador || !newProjeto.ano) {
+      alert('Preencha todos os campos para adicionar um novo projeto.');
+      return;
+    }
+    const formData = new FormData();
+    formData.append('ano', newProjeto.ano);
+    formData.append('titulo', newProjeto.titulo);
+    formData.append('aluno', newProjeto.aluno);
+    formData.append('orientador', newProjeto.orientador);
+    if (newProjeto.arquivo) {
+      formData.append('arquivo', newProjeto.arquivo);
+    }
+    // Não envie Content-Type, o browser define automaticamente para multipart/form-data
+    const token = localStorage.getItem('token');
+    const response = await fetch('http://localhost:8000/api/v1/projetos/edicoes-anteriores/projetos', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (response.ok) {
+      alert('Novo projeto adicionado com sucesso!');
+      setNewProjeto({ titulo: '', aluno: '', orientador: '', arquivo: '', ano: '' });
+      // Atualiza o estado local com as edições atualizadas
+      const updatedEdicoesTexts = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-texts');
+      if (updatedEdicoesTexts.ok) {
+        setEdicoesTexts(await updatedEdicoesTexts.json());
+      }
+    } else {
+      const error = await response.json();
+      alert(`Erro: ${error.detail}`);
+    }
+  };
+
+  const handleRemoveEdicao = async (ano) => {
+    if (!window.confirm(`Tem certeza que deseja remover a edição ${ano}?`)) return;
+    try {
+      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-anteriores/remover', {
+        method: 'POST',
+        body: JSON.stringify({ ano })
+      });
+      if (response.ok) {
+        const updatedEdicoesTexts = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-texts');
+        if (updatedEdicoesTexts.ok) {
+          setEdicoesTexts(await updatedEdicoesTexts.json());
+        }
+      } else {
+        const error = await response.json();
+        alert(`Erro: ${error.detail}`);
+      }
+    } catch (error) {
+      alert('Erro ao remover edição.');
+    }
+  };
+
+  const handleRemoveProjeto = async (ano, idx) => {
+    if (!window.confirm('Tem certeza que deseja remover este projeto?')) return;
+    try {
+      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-anteriores/remover-projeto', {
+        method: 'POST',
+        body: JSON.stringify({ ano, idx })
+      });
+      if (response.ok) {
+        const updatedEdicoesTexts = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-texts');
+        if (updatedEdicoesTexts.ok) {
+          setEdicoesTexts(await updatedEdicoesTexts.json());
+        }
+      } else {
+        const error = await response.json();
+        alert(`Erro: ${error.detail}`);
+      }
+    } catch (error) {
+      alert('Erro ao remover projeto.');
+    }
   };
 
   if (loading) {
@@ -495,7 +666,7 @@ const AdminDashboardIC = () => {
         {activeTabAdmin === 'editar-home' && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Edit className="h-5 w-5 mr-2" /> Editar Textos e Banner da Home
+              <Edit className="h-5 w-5 mr-2" /> Editar Textos da Home
             </h2>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">Título Principal</label>
@@ -516,15 +687,6 @@ const AdminDashboardIC = () => {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               />
             </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                <ImageIcon className="h-4 w-4 mr-1" /> Banner da Home (imagem)
-              </label>
-              <input type="file" accept="image/*" onChange={handleHomeImgChange} />
-              {homeTexts.bannerImgPreview && (
-                <img src={homeTexts.bannerImgPreview} alt="Banner Preview" className="mt-2 rounded-lg max-h-48" />
-              )}
-            </div>
             <button
               onClick={handleSaveHome}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -537,7 +699,7 @@ const AdminDashboardIC = () => {
         {activeTabAdmin === 'editar-edicoes' && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Edit className="h-5 w-5 mr-2" /> Editar Textos e Banner de Edições Anteriores
+              <Edit className="h-5 w-5 mr-2" /> Editar Edições Anteriores
             </h2>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">Título da Seção</label>
@@ -545,7 +707,7 @@ const AdminDashboardIC = () => {
                 type="text"
                 name="titulo"
                 value={edicoesTexts.titulo}
-                onChange={handleEdicoesTextChange}
+                onChange={(e) => setEdicoesTexts({ ...edicoesTexts, titulo: e.target.value })}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               />
             </div>
@@ -554,17 +716,106 @@ const AdminDashboardIC = () => {
               <textarea
                 name="subtitulo"
                 value={edicoesTexts.subtitulo}
-                onChange={handleEdicoesTextChange}
+                onChange={(e) => setEdicoesTexts({ ...edicoesTexts, subtitulo: e.target.value })}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               />
             </div>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                <ImageIcon className="h-4 w-4 mr-1" /> Banner de Edições Anteriores (imagem)
-              </label>
-              <input type="file" accept="image/*" onChange={handleEdicoesImgChange} />
-              {edicoesTexts.bannerImgPreview && (
-                <img src={edicoesTexts.bannerImgPreview} alt="Banner Preview" className="mt-2 rounded-lg max-h-48" />
+              <h3 className="text-md font-semibold text-gray-900 mb-2">Adicionar Nova Edição</h3>
+              <input
+                type="number"
+                placeholder="Ano"
+                value={newEdicao.ano}
+                onChange={(e) => setNewEdicao({ ...newEdicao, ano: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-2"
+              />
+              <button
+                onClick={handleAddEdicao}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors mt-2"
+              >
+                Adicionar Edição
+              </button>
+            </div>
+            <div className="mb-4">
+              <h3 className="text-md font-semibold text-gray-900 mb-2">Adicionar Novo Projeto</h3>
+              <input
+                type="text"
+                placeholder="Título do Projeto"
+                value={newProjeto.titulo}
+                onChange={(e) => setNewProjeto({ ...newProjeto, titulo: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-2"
+              />
+              <input
+                type="text"
+                placeholder="Nome do Aluno"
+                value={newProjeto.aluno}
+                onChange={(e) => setNewProjeto({ ...newProjeto, aluno: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-2"
+              />
+              <input
+                type="text"
+                placeholder="Nome do Orientador"
+                value={newProjeto.orientador}
+                onChange={(e) => setNewProjeto({ ...newProjeto, orientador: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-2"
+              />
+              <input
+                type="number"
+                placeholder="Ano da Edição"
+                value={newProjeto.ano}
+                onChange={(e) => setNewProjeto({ ...newProjeto, ano: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-2"
+              />
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => setNewProjeto({ ...newProjeto, arquivo: e.target.files[0] })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+              <button
+                onClick={handleAddProjeto}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors mt-2"
+              >
+                Adicionar Projeto
+              </button>
+            </div>
+            <div className="mb-8">
+              <h3 className="text-md font-semibold text-gray-900 mb-2">Edições Existentes</h3>
+              {edicoesTexts.edicoes && edicoesTexts.edicoes.length > 0 ? (
+                edicoesTexts.edicoes.map((edicao) => (
+                  <div key={edicao.ano} className="mb-6 border-b pb-4">
+                    <div className="flex items-center mb-2">
+                      <span className="font-bold text-blue-700 mr-2">Ano: {edicao.ano}</span>
+                      <button
+                        onClick={() => handleRemoveEdicao(edicao.ano)}
+                        className="ml-2 text-red-600 hover:underline text-sm"
+                      >
+                        Remover Edição
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {edicao.projetos && edicao.projetos.length > 0 ? (
+                        edicao.projetos.map((proj, idx) => (
+                          <div key={idx} className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex flex-col">
+                            <span className="font-semibold">{proj.titulo}</span>
+                            <span className="text-sm text-gray-700">Aluno: {proj.aluno}</span>
+                            <span className="text-sm text-gray-700 mb-2">Orientador: {proj.orientador}</span>
+                            <button
+                              onClick={() => handleRemoveProjeto(edicao.ano, idx)}
+                              className="text-red-600 hover:underline text-xs self-end"
+                            >
+                              Remover Projeto
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <span className="text-gray-500 col-span-2">Nenhum projeto nesta edição.</span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <span className="text-gray-500">Nenhuma edição cadastrada.</span>
               )}
             </div>
             <button

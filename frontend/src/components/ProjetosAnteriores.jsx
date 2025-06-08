@@ -1,110 +1,157 @@
-import React, { useEffect, useState } from 'react';
-import { GraduationCap, BookOpen, Calendar, FileText, Download, ArrowLeft } from 'lucide-react';
-
-const edicoesMock = [
-  {
-    ano: 2023,
-    edital: '/editais/edital-ic-2023.pdf',
-    projetos: [
-      { titulo: 'Análise de Dados em Saúde', aluno: 'Maria Silva', orientador: 'Prof. João Souza', arquivo: '/projetos/2023/analise-dados-saude.pdf' },
-      { titulo: 'Robótica Educacional', aluno: 'Lucas Lima', orientador: 'Profª Ana Paula', arquivo: '/projetos/2023/robotica-educacional.pdf' }
-    ]
-  },
-  {
-    ano: 2022,
-    edital: '/editais/edital-ic-2022.pdf',
-    projetos: [
-      { titulo: 'Sustentabilidade Urbana', aluno: 'Fernanda Costa', orientador: 'Prof. Carlos Mendes', arquivo: '/projetos/2022/sustentabilidade-urbana.pdf' }
-    ]
-  }
-];
+import React, { useState, useEffect } from 'react';
+import { GraduationCap, Calendar, FileText, Download } from 'lucide-react';
 
 const ProjetosAnteriores = () => {
-  const [edicoes, setEdicoes] = useState([]);
+  const [edicoesTexts, setEdicoesTexts] = useState({
+    titulo: 'Conheça Projetos de Edições Anteriores',
+    subtitulo: 'Veja exemplos de projetos já realizados e acesse os editais das últimas edições do programa de Iniciação Científica.',
+    edicoes: []
+  });
 
   useEffect(() => {
-    // Aqui você pode buscar do backend futuramente
-    setEdicoes(edicoesMock);
+    const fetchEdicoesTexts = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/v1/projetos/edicoes-texts', {
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setEdicoesTexts({
+            titulo: data.titulo,
+            subtitulo: data.subtitulo,
+            edicoes: Array.isArray(data.edicoes) ? data.edicoes : []
+          });
+        } else {
+          setEdicoesTexts(prev => ({
+            ...prev,
+            subtitulo: 'Erro ao buscar edições anteriores. Tente novamente mais tarde.',
+            edicoes: []
+          }));
+        }
+      } catch (error) {
+        setEdicoesTexts(prev => ({
+          ...prev,
+          subtitulo: 'Erro ao conectar ao servidor. Verifique sua conexão ou tente novamente mais tarde.',
+          edicoes: []
+        }));
+      }
+    };
+    fetchEdicoesTexts();
   }, []);
+
+  // Função para o admin enviar um novo projeto (exemplo de uso no AdminDashboard)
+  // newProjeto: { ano, titulo, aluno, orientador, arquivo (File) }
+  async function enviarNovoProjetoAdmin(newProjeto) {
+    const formData = new FormData();
+    formData.append('ano', newProjeto.ano);
+    formData.append('titulo', newProjeto.titulo);
+    formData.append('aluno', newProjeto.aluno);
+    formData.append('orientador', newProjeto.orientador);
+    if (newProjeto.arquivo) {
+      formData.append('arquivo', newProjeto.arquivo);
+    }
+    // Não defina Content-Type aqui!
+    await fetch('http://localhost:8000/api/v1/projetos/edicoes-anteriores/projetos', {
+      method: 'POST',
+      body: formData
+      // headers: { 'Content-Type': 'application/json' }  // REMOVIDO!
+    });
+  }
 
   const voltar = () => window.history.back();
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
+      {/* Header bonito igual ao da Home */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16">
-            <button
-              onClick={voltar}
-              className="flex items-center text-gray-600 hover:text-gray-900 mr-4"
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <GraduationCap className="h-8 w-8 text-blue-600 mr-3" />
+              <h1 className="text-xl font-semibold text-gray-900">Portal de Iniciação Científica IBMEC</h1>
+            </div>
+            <a
+              href="/"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
             >
-              <ArrowLeft className="h-5 w-5 mr-1" />
-              Voltar
-            </button>
-            <GraduationCap className="h-8 w-8 text-blue-600 mr-3" />
-            <h1 className="text-xl font-semibold text-gray-900">Edições Anteriores & Editais</h1>
+              <span>Voltar para Home</span>
+            </a>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-16">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <BookOpen className="h-16 w-16 text-blue-600 mx-auto mb-4" />
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Conheça Projetos de Edições Anteriores
-          </h2>
-          <p className="text-lg text-gray-600 mb-4">
-            Veja exemplos de projetos já realizados e acesse os editais das últimas edições do programa de Iniciação Científica.
-          </p>
+      {/* Main Section - Título e Subtítulo */}
+      <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+              {edicoesTexts.titulo}
+            </h1>
+            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+              {edicoesTexts.subtitulo}
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* Lista de Edições */}
+      {/* Edições e Projetos com novo CSS */}
       <section className="py-12 bg-white">
         <div className="max-w-5xl mx-auto px-4">
-          {edicoes.map((edicao) => (
-            <div key={edicao.ano} className="mb-12">
-              <div className="flex items-center mb-4">
-                <Calendar className="h-6 w-6 text-blue-600 mr-2" />
-                <h3 className="text-2xl font-bold text-gray-900 mr-4">Edição {edicao.ano}</h3>
-                <a
-                  href={edicao.edital}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center text-blue-600 hover:underline ml-2"
-                >
-                  <FileText className="h-5 w-5 mr-1" />
-                  Edital {edicao.ano}
-                  <Download className="h-4 w-4 ml-1" />
-                </a>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {edicao.projetos.map((proj, idx) => (
-                  <div key={idx} className="bg-blue-50 border border-blue-100 rounded-xl p-6 flex flex-col">
-                    <h4 className="text-lg font-semibold text-blue-900 mb-2">{proj.titulo}</h4>
-                    <p className="text-gray-700 mb-1"><strong>Aluno:</strong> {proj.aluno}</p>
-                    <p className="text-gray-700 mb-3"><strong>Orientador:</strong> {proj.orientador}</p>
+          {edicoesTexts.edicoes && edicoesTexts.edicoes.length > 0 ? (
+            edicoesTexts.edicoes.map((edicao) => (
+              <div key={edicao.ano} className="mb-12">
+                <div className="flex items-center mb-4">
+                  <Calendar className="h-6 w-6 text-blue-600 mr-2" />
+                  <h3 className="text-2xl font-bold text-gray-900 mr-4">Edição {edicao.ano}</h3>
+                  {edicao.edital && (
                     <a
-                      href={proj.arquivo}
+                      href={edicao.edital}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-auto inline-flex items-center text-blue-700 hover:underline"
+                      className="flex items-center text-blue-600 hover:underline ml-2"
                     >
-                      <Download className="h-4 w-4 mr-1" />
-                      Baixar Projeto
+                      <FileText className="h-5 w-5 mr-1" />
+                      Edital {edicao.ano}
+                      <Download className="h-4 w-4 ml-1" />
                     </a>
-                  </div>
-                ))}
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {edicao.projetos && edicao.projetos.length > 0 ? (
+                    edicao.projetos.map((proj, idx) => (
+                      <div key={idx} className="bg-blue-50 border border-blue-100 rounded-xl p-6 flex flex-col">
+                        <h4 className="text-lg font-semibold text-blue-900 mb-2">{proj.titulo}</h4>
+                        <p className="text-gray-700 mb-1"><strong>Aluno:</strong> {proj.aluno}</p>
+                        <p className="text-gray-700 mb-3"><strong>Orientador:</strong> {proj.orientador}</p>
+                        {proj.arquivo && (
+                          <a
+                            href={proj.arquivo}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-auto inline-flex items-center text-blue-700 hover:underline"
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Baixar Projeto
+                          </a>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-gray-500 col-span-2">Nenhum projeto disponível para esta edição.</div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-gray-500 text-center">Nenhuma edição disponível no momento.</p>
+          )}
         </div>
       </section>
 
       {/* CTA para Home */}
-      <section className="py-12 bg-gradient-to-r from-blue-600 to-purple-600">
+      <section className="py-12" style={{ background: 'linear-gradient(to right, #7c3aed, #6366f1)' }}>
         <div className="max-w-3xl mx-auto text-center px-4">
           <h2 className="text-2xl font-bold text-white mb-4">
             Quer participar da próxima edição?
