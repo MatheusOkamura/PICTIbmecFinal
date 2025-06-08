@@ -100,7 +100,7 @@ async def cadastrar_projeto(projeto: ProjetoCadastro, current_user: dict = Depen
 
 @router.get("/meus-projetos")
 async def meus_projetos(current_user: dict = Depends(get_current_user)):
-    """Lista projetos do aluno logado"""
+    """Lista projetos do aluno logado, incluindo atividades"""
     if current_user.get('user_type') != 'aluno':
         raise HTTPException(status_code=403, detail="Endpoint apenas para alunos")
     
@@ -121,6 +121,15 @@ async def meus_projetos(current_user: dict = Depends(get_current_user)):
         projetos = []
         for row in cursor.fetchall():
             projeto = dict(row)
+            # Buscar atividades vinculadas a este projeto
+            cursor.execute("""
+                SELECT id, titulo, descricao, data_criacao
+                FROM atividades
+                WHERE projeto_id = ?
+                ORDER BY data_criacao ASC
+            """, (projeto["id"],))
+            atividades = [dict(a) for a in cursor.fetchall()]
+            projeto["atividades"] = atividades
             projetos.append(projeto)
         
         return projetos
@@ -130,7 +139,7 @@ async def meus_projetos(current_user: dict = Depends(get_current_user)):
 @router.get("/pendentes")
 async def projetos_pendentes(current_user: dict = Depends(get_current_user)):
     """Lista projetos pendentes para o orientador"""
-    if current_user.get('user_type') != 'professor':
+    if current_user.get('user_type') not in ('professor', 'orientador'):
         raise HTTPException(status_code=403, detail="Endpoint apenas para professores")
     
     conn = get_db_connection()
@@ -157,7 +166,7 @@ async def projetos_pendentes(current_user: dict = Depends(get_current_user)):
 @router.get("/ativos")
 async def projetos_ativos(current_user: dict = Depends(get_current_user)):
     """Lista projetos ativos do orientador"""
-    if current_user.get('user_type') != 'professor':
+    if current_user.get('user_type') not in ('professor', 'orientador'):
         raise HTTPException(status_code=403, detail="Endpoint apenas para professores")
     
     conn = get_db_connection()
@@ -186,7 +195,7 @@ async def projetos_ativos(current_user: dict = Depends(get_current_user)):
 @router.post("/aprovar/{projeto_id}")
 async def aprovar_projeto(projeto_id: int, current_user: dict = Depends(get_current_user)):
     """Aprova um projeto"""
-    if current_user.get('user_type') != 'professor':
+    if current_user.get('user_type') not in ('professor', 'orientador'):
         raise HTTPException(status_code=403, detail="Apenas orientadores podem aprovar projetos")
     
     conn = get_db_connection()

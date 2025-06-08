@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, GraduationCap, Save, ArrowLeft, Plus, X } from 'lucide-react';
 
-const EditarPerfilProfessor = () => {
+const EditarPerfilProfessor = ({ isAdmin, onClose, afterSave }) => {
   const [user, setUser] = useState(null);
   const [perfil, setPerfil] = useState({
     nome: '',
@@ -35,8 +35,6 @@ const EditarPerfilProfessor = () => {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setUser(payload);
-        
-        // Carregar perfil da API
         carregarPerfil();
       } catch (error) {
         console.error('Erro ao decodificar token:', error);
@@ -49,6 +47,14 @@ const EditarPerfilProfessor = () => {
       const response = await fetchAuth('http://localhost:8000/api/v1/perfis/meu-perfil');
       if (response.ok) {
         const perfilData = await response.json();
+        let areas = perfilData.areas_interesse;
+        if (!Array.isArray(areas)) {
+          if (typeof areas === "string" && areas.length > 0) {
+            areas = areas.split(',').map(a => a.trim()).filter(Boolean);
+          } else {
+            areas = [];
+          }
+        }
         setPerfil({
           nome: perfilData.nome || '',
           email: perfilData.email || '',
@@ -56,7 +62,7 @@ const EditarPerfilProfessor = () => {
           titulacao: perfilData.titulacao || '',
           lattes_url: perfilData.lattes_url || '',
           biografia: perfilData.biografia || '',
-          areas_interesse: perfilData.areas_interesse || []
+          areas_interesse: areas
         });
       }
     } catch (error) {
@@ -83,16 +89,16 @@ const EditarPerfilProfessor = () => {
 
   const handleSalvar = async () => {
     setSalvando(true);
-    
     try {
       const response = await fetchAuth('http://localhost:8000/api/v1/perfis/atualizar-professor', {
         method: 'PUT',
         body: JSON.stringify(perfil)
       });
-
       if (response.ok) {
         alert('Perfil atualizado com sucesso!');
-        window.history.back();
+        if (afterSave) afterSave();
+        if (onClose) onClose();
+        else window.history.back();
       } else {
         const error = await response.json();
         alert(`Erro: ${error.detail}`);
@@ -106,10 +112,11 @@ const EditarPerfilProfessor = () => {
   };
 
   const voltar = () => {
-    window.history.back();
+    if (onClose) onClose();
+    else window.history.back();
   };
 
-  if (!user) {
+  if (!user || (!['professor', 'admin_professor', 'admin'].includes(user.user_type) && !isAdmin)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -134,7 +141,9 @@ const EditarPerfilProfessor = () => {
               Voltar
             </button>
             <GraduationCap className="h-8 w-8 text-blue-600 mr-3" />
-            <h1 className="text-xl font-semibold text-gray-900">Editar Perfil - Professor</h1>
+            <h1 className="text-xl font-semibold text-gray-900">
+              Editar Perfil - {isAdmin ? 'Administrador' : 'Professor'}
+            </h1>
           </div>
         </div>
       </header>
@@ -176,9 +185,9 @@ const EditarPerfilProfessor = () => {
               <input
                 type="email"
                 value={perfil.email}
-                disabled
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 text-gray-500"
-                placeholder="Email não pode ser alterado"
+                onChange={(e) => setPerfil(prev => ({ ...prev, email: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Seu email institucional"
               />
             </div>
 
@@ -269,7 +278,7 @@ const EditarPerfilProfessor = () => {
 
               {/* Lista de áreas */}
               <div className="flex flex-wrap gap-2">
-                {perfil.areas_interesse.map((area, index) => (
+                {(Array.isArray(perfil.areas_interesse) ? perfil.areas_interesse : []).map((area, index) => (
                   <span
                     key={index}
                     className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center space-x-2"

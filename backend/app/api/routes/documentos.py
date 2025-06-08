@@ -63,12 +63,12 @@ async def upload_documento(
         if not projeto:
             raise HTTPException(status_code=404, detail="Projeto não encontrado")
         
-        # NOVO: Verificar se existe pelo menos uma atividade criada pelo professor para este projeto
+        # Corrigido: Verificar se existe pelo menos uma atividade para este projeto (não filtrar por aluno_id e orientador_id)
         cursor.execute("""
             SELECT COUNT(*) as total_atividades
             FROM atividades
-            WHERE projeto_id = ? AND aluno_id = ? AND professor_id = ?
-        """, (projeto_id, current_user['user_id'], projeto['orientador_id']))
+            WHERE projeto_id = ?
+        """, (projeto_id,))
         atividades = cursor.fetchone()
         if not atividades or atividades['total_atividades'] == 0:
             raise HTTPException(status_code=403, detail="Você só pode enviar documentos quando o professor criar uma entrega para este projeto.")
@@ -106,11 +106,15 @@ async def listar_documentos(projeto_id: int, current_user: dict = Depends(get_cu
     cursor = conn.cursor()
     
     try:
-        # Verificar acesso ao projeto
+        # Permitir admin ver qualquer projeto
         if current_user.get('user_type') == 'aluno':
             cursor.execute("SELECT * FROM projetos WHERE id = ? AND aluno_id = ?", (projeto_id, current_user['user_id']))
-        else:
+        elif current_user.get('user_type') in ('professor', 'admin_professor'):
             cursor.execute("SELECT * FROM projetos WHERE id = ? AND orientador_id = ?", (projeto_id, current_user['user_id']))
+        elif current_user.get('user_type') == 'admin':
+            cursor.execute("SELECT * FROM projetos WHERE id = ?", (projeto_id,))
+        else:
+            raise HTTPException(status_code=403, detail="Sem permissão para acessar este projeto")
         
         projeto = cursor.fetchone()
         if not projeto:
@@ -175,7 +179,7 @@ async def comentar_documento(
         # Verificar permissão
         if current_user.get('user_type') == 'aluno' and documento['aluno_id'] != current_user['user_id']:
             raise HTTPException(status_code=403, detail="Sem permissão para comentar")
-        elif current_user.get('user_type') == 'professor' and documento['orientador_id'] != current_user['user_id']:
+        elif current_user.get('user_type') in ('professor', 'admin_professor') and documento['orientador_id'] != current_user['user_id']:
             raise HTTPException(status_code=403, detail="Sem permissão para comentar")
         
         # Inserir comentário
@@ -189,5 +193,37 @@ async def comentar_documento(
         
         conn.commit()
         return {"message": "Comentário adicionado com sucesso"}
+    finally:
+        conn.close()
+
+@router.get("/projeto/{projeto_id}/atividades")
+async def listar_atividades_projeto(projeto_id: int, current_user: dict = Depends(get_current_user)):
+    """
+    Lista as atividades criadas pelo professor para o projeto (visível para aluno e professor)
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Permitir aluno ver apenas se for dele, professor se for orientador, admin tudo
+        if current_user.get('user_type') == 'aluno':
+            cursor.execute("SELECT * FROM projetos WHERE id = ? AND aluno_id = ?", (projeto_id, current_user['user_id']))
+        elif current_user.get('user_type') in ('professor', 'admin_professor'):
+            cursor.execute("SELECT * FROM projetos WHERE id = ? AND orientador_id = ?", (projeto_id, current_user['user_id']))
+        elif current_user.get('user_type') == 'admin':
+            cursor.execute("SELECT * FROM projetos WHERE id = ?", (projeto_id,))
+        else:
+            raise HTTPException(status_code=403, detail="Sem permissão para acessar este projeto")
+        projeto = cursor.fetchone()
+        if not projeto:
+            raise HTTPException(status_code=404, detail="Projeto não encontrado")
+
+        cursor.execute("""
+            SELECT id, titulo, descricao, data_criacao, aluno_id
+            FROM atividades
+            WHERE projeto_id = ?
+            ORDER BY data_criacao ASC
+        """, (projeto_id,))
+        atividades = [dict(a) for a in cursor.fetchall()]
+        return atividades
     finally:
         conn.close()

@@ -5,6 +5,7 @@ const DocumentosProjeto = () => {
   const [user, setUser] = useState(null);
   const [projeto, setProjeto] = useState(null);
   const [documentos, setDocumentos] = useState([]);
+  const [atividades, setAtividades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [novoComentario, setNovoComentario] = useState('');
@@ -52,6 +53,11 @@ const DocumentosProjeto = () => {
       if (response.ok) {
         const docs = await response.json();
         setDocumentos(docs);
+      }
+      // Carregar atividades do projeto
+      const atividadesRes = await fetchAuth(`http://localhost:8000/api/v1/documentos/projeto/${projetoId}/atividades`);
+      if (atividadesRes.ok) {
+        setAtividades(await atividadesRes.json());
       }
     } catch (error) {
       console.error('Erro ao carregar documentos:', error);
@@ -187,6 +193,26 @@ const DocumentosProjeto = () => {
             )}
           </div>
         </div>
+
+        {/* Atividades do Professor */}
+        {atividades && atividades.length > 0 && (
+          <div id="atividades" className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
+            <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center">
+              📋 Atividades para Entrega
+            </h3>
+            <ul className="space-y-2">
+              {atividades.map((atv) => (
+                <li key={atv.id} className="border-b border-blue-100 pb-2 mb-2 last:border-b-0 last:mb-0">
+                  <div className="font-medium text-blue-800">{atv.titulo}</div>
+                  <div className="text-sm text-blue-700">{atv.descricao}</div>
+                  <div className="text-xs text-blue-400">
+                    Criada em: {new Date(atv.data_criacao).toLocaleDateString()}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Lista de Documentos */}
         <div className="space-y-6">

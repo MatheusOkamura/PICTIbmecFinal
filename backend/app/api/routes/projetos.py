@@ -14,6 +14,9 @@ import os
 import json
 from fastapi import UploadFile, File, Form
 
+from database_setup import setup_database
+setup_database()
+
 settings = get_settings()
 router = APIRouter(prefix="/projetos", tags=["Projetos"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
@@ -78,6 +81,7 @@ class AtividadeCadastro(BaseModel):
     titulo: str
     descricao: str
     projeto_id: int
+    # Remova aluno_id daqui, pois ele será obtido do projeto
 
 # --- MOCK DATA PARA EDIÇÕES ANTERIORES ---
 EDICOES_ANTERIORES = [
@@ -181,7 +185,7 @@ async def cadastrar_projeto(projeto: ProjetoCadastro, current_user: dict = Depen
 
 @router.get("/meus-projetos")
 async def meus_projetos(current_user: dict = Depends(get_current_user)):
-    """Lista projetos do aluno logado"""
+    """Cadastra um novo projeto"""
     if current_user.get('user_type') != 'aluno':
         raise HTTPException(status_code=403, detail="Endpoint apenas para alunos")
     
@@ -202,6 +206,15 @@ async def meus_projetos(current_user: dict = Depends(get_current_user)):
         projetos = []
         for row in cursor.fetchall():
             projeto = dict(row)
+            # Buscar atividades vinculadas a este projeto
+            cursor.execute("""
+                SELECT id, titulo, descricao, data_criacao
+                FROM atividades
+                WHERE projeto_id = ?
+                ORDER BY data_criacao ASC
+            """, (projeto["id"],))
+            atividades = [dict(a) for a in cursor.fetchall()]
+            projeto["atividades"] = atividades
             projetos.append(projeto)
         
         return projetos
@@ -211,7 +224,7 @@ async def meus_projetos(current_user: dict = Depends(get_current_user)):
 @router.get("/pendentes")
 async def projetos_pendentes(current_user: dict = Depends(get_current_user)):
     """Lista projetos pendentes para o orientador"""
-    if current_user.get('user_type') != 'professor':
+    if current_user.get('user_type') not in ('professor', 'orientador', 'admin_professor'):
         raise HTTPException(status_code=403, detail="Endpoint apenas para professores")
     
     conn = get_db_connection()
@@ -238,7 +251,7 @@ async def projetos_pendentes(current_user: dict = Depends(get_current_user)):
 @router.get("/ativos")
 async def projetos_ativos(current_user: dict = Depends(get_current_user)):
     """Lista projetos ativos do orientador"""
-    if current_user.get('user_type') != 'professor':
+    if current_user.get('user_type') not in ('professor', 'orientador', 'admin_professor'):
         raise HTTPException(status_code=403, detail="Endpoint apenas para professores")
     
     conn = get_db_connection()
@@ -267,7 +280,7 @@ async def projetos_ativos(current_user: dict = Depends(get_current_user)):
 @router.post("/aprovar/{projeto_id}")
 async def aprovar_projeto(projeto_id: int, current_user: dict = Depends(get_current_user)):
     """Aprova um projeto"""
-    if current_user.get('user_type') != 'professor':
+    if current_user.get('user_type') not in ('professor', 'orientador', 'admin_professor'):
         raise HTTPException(status_code=403, detail="Apenas orientadores podem aprovar projetos")
     
     conn = get_db_connection()
@@ -346,30 +359,44 @@ async def todos_projetos_ativos(current_user: dict = Depends(get_current_user)):
 @router.post("/enviar-atividade")
 async def enviar_atividade(atividade: AtividadeCadastro, current_user: dict = Depends(get_current_user)):
     """Professor cria e envia uma atividade para um aluno vinculado a um projeto"""
-    if current_user.get('user_type') != 'professor':
+    if current_user.get('user_type') not in ('professor', 'orientador', 'admin_professor'):
         raise HTTPException(status_code=403, detail="Apenas professores podem criar atividades")
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        # Verifica se o projeto pertence ao professor
-        cursor.execute("SELECT * FROM projetos WHERE id = ? AND orientador_id = ?", (atividade.projeto_id, current_user['user_id']))
+        projeto_id = atividade.projeto_id
+        if isinstance(projeto_id, str):
+            try:
+                projeto_id = int(projeto_id)
+            except Exception:
+                raise HTTPException(status_code=400, detail="ID do projeto inválido")
+        # Busca o projeto e o aluno vinculado
+        cursor.execute("SELECT * FROM projetos WHERE id = ? AND orientador_id = ?", (projeto_id, current_user['user_id']))
         projeto = cursor.fetchone()
         if not projeto:
-            raise HTTPException(status_code=404, detail="Projeto não encontrado ou não pertence ao professor")
+            raise HTTPException(status_code=400, detail="Projeto não encontrado ou não pertence ao professor")
+        aluno_id = projeto['aluno_id']
+        if not aluno_id:
+            raise HTTPException(status_code=400, detail="Projeto não possui aluno vinculado")
+        # Log para depuração
+        print(f"Inserindo atividade: titulo={atividade.titulo}, projeto_id={projeto_id}, aluno_id={aluno_id}, orientador_id={current_user['user_id']}")
         # Cria a atividade
         cursor.execute("""
-            INSERT INTO atividades (titulo, descricao, projeto_id, aluno_id, professor_id, data_criacao)
+            INSERT INTO atividades (titulo, descricao, projeto_id, aluno_id, orientador_id, data_criacao)
             VALUES (?, ?, ?, ?, ?, ?)
         """, (
             atividade.titulo,
             atividade.descricao,
-            atividade.projeto_id,
-            projeto['aluno_id'],
+            projeto_id,
+            aluno_id,
             current_user['user_id'],
             datetime.now().isoformat()
         ))
         conn.commit()
         return {"message": "Atividade criada e enviada para o aluno"}
+    except Exception as e:
+        print("Erro ao enviar atividade:", e)
+        raise HTTPException(status_code=500, detail=f"Erro interno ao enviar atividade: {e}")
     finally:
         conn.close()
 
@@ -465,7 +492,8 @@ async def get_home_texts():
     """Retorna os textos da Home"""
     default_data = {
         "titulo": "Portal de Iniciação Científica",
-        "subtitulo": "Conecte-se com orientadores, desenvolva projetos inovadores e dê os primeiros passos na sua carreira de pesquisador."
+        "subtitulo": "Conecte-se com orientadores, desenvolva projetos inovadores e dê os primeiros passos na sua carreira de pesquisador.",
+        "texto_pict": ""
     }
     return load_texts(HOME_TEXTS_FILE, default_data)
 
@@ -476,7 +504,8 @@ async def update_home_texts(data: dict, current_user: dict = Depends(get_current
         raise HTTPException(status_code=403, detail="Apenas admin pode atualizar os textos da Home")
     updated_data = {
         "titulo": data.get("titulo", ""),
-        "subtitulo": data.get("subtitulo", "")
+        "subtitulo": data.get("subtitulo", ""),
+        "texto_pict": data.get("texto_pict", "")
     }
     save_texts(HOME_TEXTS_FILE, updated_data)
     return {"message": "Textos da Home atualizados com sucesso"}

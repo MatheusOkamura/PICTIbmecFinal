@@ -42,6 +42,16 @@ class PerfilAluno(BaseModel):
 
 class PerfilProfessor(BaseModel):
     nome: str
+    email: str
+    telefone: Optional[str] = None
+    titulacao: Optional[str] = None
+    lattes_url: Optional[str] = None
+    biografia: Optional[str] = None
+    areas_interesse: Optional[List[str]] = []
+
+class PerfilAdmin(BaseModel):
+    nome: str
+    email: str
     telefone: Optional[str] = None
     titulacao: Optional[str] = None
     lattes_url: Optional[str] = None
@@ -53,12 +63,15 @@ async def obter_meu_perfil(current_user: dict = Depends(get_current_user)):
     """Obtém o perfil do usuário logado"""
     conn = get_db_connection()
     cursor = conn.cursor()
-    
     try:
         if current_user.get('user_type') == 'aluno':
             cursor.execute("SELECT * FROM alunos WHERE id = ?", (current_user['user_id'],))
-        else:
+        elif current_user.get('user_type') in ('professor', 'admin_professor'):
             cursor.execute("SELECT * FROM orientadores WHERE id = ?", (current_user['user_id'],))
+        elif current_user.get('user_type') == 'admin':
+            cursor.execute("SELECT * FROM admins WHERE id = ?", (current_user['user_id'],))
+        else:
+            raise HTTPException(status_code=403, detail="Tipo de usuário não suportado")
         
         perfil = cursor.fetchone()
         if not perfil:
@@ -67,11 +80,19 @@ async def obter_meu_perfil(current_user: dict = Depends(get_current_user)):
         perfil_dict = dict(perfil)
         
         # Converter strings de listas para arrays
-        if current_user.get('user_type') == 'aluno' and perfil_dict.get('interesses_pesquisa'):
-            perfil_dict['interesses_pesquisa'] = perfil_dict['interesses_pesquisa'].split(',')
-        elif current_user.get('user_type') == 'professor' and perfil_dict.get('areas_interesse'):
-            perfil_dict['areas_interesse'] = perfil_dict['areas_interesse'].split(',')
-        
+        if current_user.get('user_type') == 'aluno':
+            interesses = perfil_dict.get('interesses_pesquisa')
+            if isinstance(interesses, str):
+                perfil_dict['interesses_pesquisa'] = [i.strip() for i in interesses.split(',') if i.strip()]
+            elif not interesses:
+                perfil_dict['interesses_pesquisa'] = []
+        elif current_user.get('user_type') == 'professor':
+            areas = perfil_dict.get('areas_interesse')
+            if isinstance(areas, str):
+                perfil_dict['areas_interesse'] = [a.strip() for a in areas.split(',') if a.strip()]
+            elif not areas:
+                perfil_dict['areas_interesse'] = []
+        # Para admin, apenas nome e email
         return perfil_dict
     finally:
         conn.close()
@@ -108,28 +129,44 @@ async def atualizar_perfil_aluno(perfil: PerfilAluno, current_user: dict = Depen
 
 @router.put("/atualizar-professor")
 async def atualizar_perfil_professor(perfil: PerfilProfessor, current_user: dict = Depends(get_current_user)):
-    """Atualiza o perfil do professor"""
-    if current_user.get('user_type') != 'professor':
-        raise HTTPException(status_code=403, detail="Endpoint apenas para professores")
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    try:
-        # Converter lista de áreas para string
-        areas_str = ','.join(perfil.areas_interesse) if perfil.areas_interesse else ''
-        
-        cursor.execute("""
-            UPDATE orientadores 
-            SET nome = ?, telefone = ?, titulacao = ?, lattes_url = ?, 
-                biografia = ?, areas_interesse = ?
-            WHERE id = ?
-        """, (
-            perfil.nome, perfil.telefone, perfil.titulacao, perfil.lattes_url,
-            perfil.biografia, areas_str, current_user['user_id']
-        ))
-        
-        conn.commit()
-        return {"message": "Perfil atualizado com sucesso"}
-    finally:
-        conn.close()
+    """Atualiza o perfil do professor ou admin"""
+    if current_user.get('user_type') in ('professor', 'admin_professor'):
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            # Converter lista de áreas para string
+            areas_str = ','.join(perfil.areas_interesse) if perfil.areas_interesse else ''
+            # Permitir atualização do email institucional
+            cursor.execute("""
+                UPDATE orientadores 
+                SET nome = ?, email = ?, telefone = ?, titulacao = ?, lattes_url = ?, 
+                    biografia = ?, areas_interesse = ?
+                WHERE id = ?
+            """, (
+                perfil.nome, perfil.email, perfil.telefone, perfil.titulacao, perfil.lattes_url,
+                perfil.biografia, areas_str, current_user['user_id']
+            ))
+            conn.commit()
+            return {"message": "Perfil atualizado com sucesso"}
+        finally:
+            conn.close()
+    elif current_user.get('user_type') == 'admin':
+        # Admin pode editar nome, email, telefone, titulacao, lattes_url, biografia, areas_interesse
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            areas_str = ','.join(getattr(perfil, 'areas_interesse', []) or [])
+            cursor.execute("""
+                UPDATE admins
+                SET nome = ?, email = ?, telefone = ?, titulacao = ?, lattes_url = ?, biografia = ?, areas_interesse = ?
+                WHERE id = ?
+            """, (
+                perfil.nome, perfil.email, getattr(perfil, 'telefone', None), getattr(perfil, 'titulacao', None),
+                getattr(perfil, 'lattes_url', None), getattr(perfil, 'biografia', None), areas_str, current_user['user_id']
+            ))
+            conn.commit()
+            return {"message": "Perfil de admin atualizado com sucesso"}
+        finally:
+            conn.close()
+    else:
+        raise HTTPException(status_code=403, detail="Endpoint apenas para professores, admin_professor ou admin")

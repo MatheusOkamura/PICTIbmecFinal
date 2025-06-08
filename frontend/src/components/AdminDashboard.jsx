@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GraduationCap, Users, BookOpen, Calendar, Settings, LogOut, Bell, CheckCircle, Clock, Edit3, FileText, MessageSquare, Image as ImageIcon, Edit } from 'lucide-react';
+import EditarPerfilProfessor from './EditarPerfilProfessor';
 
 const AdminDashboardIC = () => {
   const [user, setUser] = useState(null);
@@ -16,7 +17,8 @@ const AdminDashboardIC = () => {
   // Mock para textos e imagens (você pode integrar com backend depois)
   const [homeTexts, setHomeTexts] = useState({
     titulo: '',
-    subtitulo: ''
+    subtitulo: '',
+    texto_pict: ''
   });
   const [edicoesTexts, setEdicoesTexts] = useState({
     titulo: 'Conheça Projetos de Edições Anteriores',
@@ -27,6 +29,9 @@ const AdminDashboardIC = () => {
   });
   const [newEdicao, setNewEdicao] = useState({ ano: '' });
   const [newProjeto, setNewProjeto] = useState({ titulo: '', aluno: '', orientador: '', arquivo: '', ano: '' });
+  const [showEditarPerfil, setShowEditarPerfil] = useState(false);
+  const [perfilAdmin, setPerfilAdmin] = useState({ nome: '', email: '' });
+  const [salvandoPerfil, setSalvandoPerfil] = useState(false);
 
   const fetchAuth = async (url, options = {}) => {
     const token = localStorage.getItem('token');
@@ -63,15 +68,47 @@ const AdminDashboardIC = () => {
   }, []);
 
   useEffect(() => {
+    const textoPadraoPICT = `
+Fique por dentro | Inscrições abertas para o PICT 2025 – Ibmec SP
+
+A 6ª edição do Programa de Iniciação Científica e Tecnológica (PICT) já está com inscrições abertas!
+
+Essa é uma oportunidade única para os alunos do Ibmec São Paulo se aprofundarem no universo da pesquisa científica.
+
+Participar da Iniciação Científica é um diferencial importante para sua carreira. O PICT é uma excelente oportunidade de complementar sua formação acadêmica, proporcionando experiência prática e construção de conhecimento científico.
+
+Durante o programa, você terá o suporte de um professor pesquisador experiente, que irá orientá-lo no planejamento, na execução e na apresentação do seu estudo científico. Não perca essa chance de enriquecer seu currículo e desenvolver habilidades que farão toda a diferença no mercado de trabalho!
+
+Como fazer a inscrição no PICT?
+1. Contatar um professor da área de seu interesse e verificar a disponibilidade para a orientação (Edital > Relação de professores/área);
+2. Elaborar uma proposta do projeto para submeter na inscrição;
+3. Reunir os documentos necessários para a inscrição;
+4. Efetivar a sua inscrição no processo seletivo do PICT conforme orientações do Edital (até 18/11/24);
+5. Preparar a apresentação de seu projeto (fevereiro/2025).
+
+As inscrições do programa vão até o dia 18/11/24, e para mais detalhes sobre o PICT 2025, consulte o edital disponível através dos links abaixo:
+
+Paulista: https://drive.google.com/file/d/1hOlRuJ1D_4Wt8qkCSwX9IVQaBj9bHeJg/view
+Faria Lima: https://drive.google.com/file/d/1LeuIZ5r9B4dRPgjKqFK4qk1Q2eWS6NQL/view
+`.trim();
+
     const fetchHomeTexts = async () => {
       try {
         const response = await fetchAuth('http://localhost:8000/api/v1/projetos/home-texts');
         if (response.ok) {
           const data = await response.json();
-          setHomeTexts(data); // Atualizar os textos da Home no estado inicial
+          setHomeTexts({
+            titulo: data.titulo || '',
+            subtitulo: data.subtitulo || '',
+            texto_pict: data.texto_pict !== undefined && data.texto_pict !== null ? data.texto_pict : ''
+          });
         }
       } catch (error) {
-        console.error('Erro ao carregar textos da Home:', error);
+        setHomeTexts({
+          titulo: '',
+          subtitulo: '',
+          texto_pict: ''
+        });
       }
     };
 
@@ -161,21 +198,35 @@ const AdminDashboardIC = () => {
   };
 
   // Handlers for Home texts/images
-  const handleHomeTextChange = (e) => setHomeTexts({ ...homeTexts, [e.target.name]: e.target.value });
+  const handleHomeTextChange = (e) => {
+    setHomeTexts((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
   const handleSaveHome = async () => {
     try {
       const response = await fetchAuth('http://localhost:8000/api/v1/projetos/home-texts', {
         method: 'POST',
         body: JSON.stringify({
           titulo: homeTexts.titulo,
-          subtitulo: homeTexts.subtitulo
+          subtitulo: homeTexts.subtitulo,
+          texto_pict: homeTexts.texto_pict
         })
       });
       if (response.ok) {
         alert('Textos da Home atualizados com sucesso!');
+        // Dispara evento para outras abas atualizarem a Home
+        localStorage.setItem('homeTextsUpdated', Date.now().toString());
+        // Atualiza o estado local do admin
         const updatedHomeTexts = await fetchAuth('http://localhost:8000/api/v1/projetos/home-texts');
         if (updatedHomeTexts.ok) {
-          setHomeTexts(await updatedHomeTexts.json()); // Atualizar o estado local após salvar
+          const data = await updatedHomeTexts.json();
+          setHomeTexts({
+            titulo: data.titulo || '',
+            subtitulo: data.subtitulo || '',
+            texto_pict: data.texto_pict !== undefined && data.texto_pict !== null ? data.texto_pict : ''
+          });
         }
       } else {
         const error = await response.json();
@@ -320,6 +371,48 @@ const AdminDashboardIC = () => {
     }
   };
 
+  // Carregar perfil admin
+  const carregarPerfilAdmin = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8000/api/v1/perfis/meu-perfil', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const perfil = await res.json();
+        setPerfilAdmin({ nome: perfil.nome || '', email: perfil.email || '' });
+      }
+    } catch {}
+  };
+
+  useEffect(() => {
+    carregarPerfilAdmin();
+    // eslint-disable-next-line
+  }, []);
+
+  // Salvar perfil admin
+  const handleSalvarPerfilAdmin = async () => {
+    setSalvandoPerfil(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8000/api/v1/perfis/atualizar-professor', {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(perfilAdmin)
+      });
+      if (res.ok) {
+        alert('Perfil atualizado com sucesso!');
+        setShowEditarPerfil(false);
+      } else {
+        const error = await res.json();
+        alert(`Erro: ${error.detail}`);
+      }
+    } catch {
+      alert('Erro ao salvar perfil.');
+    }
+    setSalvandoPerfil(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -439,7 +532,12 @@ const AdminDashboardIC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Perfil</p>
-                <span className="text-sm text-blue-600 font-medium">Admin</span>
+                <button
+                  onClick={() => setShowEditarPerfil(true)}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Editar
+                </button>
               </div>
             </div>
           </div>
@@ -687,6 +785,17 @@ const AdminDashboardIC = () => {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               />
             </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Texto do Destaque PICT (editável)</label>
+              <textarea
+                name="texto_pict"
+                value={homeTexts.texto_pict}
+                onChange={handleHomeTextChange}
+                className="w-full border border-blue-300 rounded-lg px-3 py-2"
+                rows={12}
+                placeholder="Texto de destaque do PICT, editável pelo admin. Use Markdown ou HTML para formatação."
+              />
+            </div>
             <button
               onClick={handleSaveHome}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -853,6 +962,19 @@ const AdminDashboardIC = () => {
                 Começar a usar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar Perfil Admin (usar EditarPerfilProfessor) */}
+      {showEditarPerfil && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <EditarPerfilProfessor
+              isAdmin
+              onClose={() => setShowEditarPerfil(false)}
+              afterSave={() => setShowEditarPerfil(false)}
+            />
           </div>
         </div>
       )}

@@ -122,9 +122,15 @@ const ProfessorDashboardIC = () => {
     }
     setEnviandoAtividade(true);
     try {
+      // Envie apenas os campos necessários
+      const payload = {
+        titulo: atividadeData.titulo,
+        descricao: atividadeData.descricao,
+        projeto_id: Number(atividadeData.projeto_id)
+      };
       const response = await fetchAuth('http://localhost:8000/api/v1/projetos/enviar-atividade', {
         method: 'POST',
-        body: JSON.stringify(atividadeData)
+        body: JSON.stringify(payload)
       });
       if (response.ok) {
         alert('Atividade enviada com sucesso!');

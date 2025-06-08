@@ -11,8 +11,10 @@ from app.api.routes.perfis import router as perfis_router
 from app.api.routes.documentos import router as documentos_router
 from app.core.config import get_settings
 import os
+from database_setup import setup_database
 
 settings = get_settings()
+setup_database()
 
 def determine_user_role(email: str) -> str:
     """

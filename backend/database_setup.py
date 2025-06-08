@@ -110,6 +110,42 @@ def setup_database():
         )
         """)
     
+    # Configurar tabela atividades (força a criação)
+    try:
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS atividades (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            titulo TEXT NOT NULL,
+            descricao TEXT,
+            projeto_id INTEGER NOT NULL,
+            aluno_id INTEGER NOT NULL,
+            orientador_id INTEGER NOT NULL,
+            data_criacao TEXT,
+            FOREIGN KEY (projeto_id) REFERENCES projetos (id),
+            FOREIGN KEY (aluno_id) REFERENCES alunos (id),
+            FOREIGN KEY (orientador_id) REFERENCES orientadores (id)
+        )
+        """)
+        print("Tabela 'atividades' verificada/criada com sucesso.")
+    except Exception as e:
+        print("Erro ao criar/verificar tabela 'atividades':", e)
+    
+    # Adicionar tabela admins com campos de perfil completo
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='admins'")
+    if not cursor.fetchone():
+        cursor.execute("""
+        CREATE TABLE admins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL,
+            email TEXT NOT NULL,
+            telefone TEXT,
+            titulacao TEXT,
+            lattes_url TEXT,
+            biografia TEXT,
+            areas_interesse TEXT
+        )
+        """)
+    
     # Inicializar sequências apenas se estiverem ausentes
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='sqlite_sequence'")
     if cursor.fetchone():
@@ -128,6 +164,12 @@ def setup_database():
         cursor.execute("SELECT seq FROM sqlite_sequence WHERE name='comentarios'")
         if not cursor.fetchone():
             cursor.execute("INSERT INTO sqlite_sequence (name, seq) VALUES ('comentarios', 999)")
+        cursor.execute("SELECT seq FROM sqlite_sequence WHERE name='atividades'")
+        if not cursor.fetchone():
+            cursor.execute("INSERT INTO sqlite_sequence (name, seq) VALUES ('atividades', 999)")
+        cursor.execute("SELECT seq FROM sqlite_sequence WHERE name='admins'")
+        if not cursor.fetchone():
+            cursor.execute("INSERT INTO sqlite_sequence (name, seq) VALUES ('admins', 999)")
     
     conn.commit()
     print("✅ Banco de dados configurado com sucesso!")

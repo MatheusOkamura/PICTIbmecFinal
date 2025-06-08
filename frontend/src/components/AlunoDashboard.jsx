@@ -341,11 +341,24 @@ const AlunoDashboardIC = () => {
                     <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum projeto cadastrado</h3>
                     <p className="text-gray-600 mb-4">Cadastre seu primeiro projeto de iniciação científica!</p>
                     <button
-                      onClick={() => setShowCadastrarProjeto(true)}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                      onClick={() => podeCadastrarProjeto && setShowCadastrarProjeto(true)}
+                      className={`bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors ${
+                        !podeCadastrarProjeto ? 'bg-gray-200 text-gray-400 hover:bg-gray-200 cursor-not-allowed' : ''
+                      }`}
+                      disabled={!podeCadastrarProjeto}
+                      title={
+                        podeCadastrarProjeto
+                          ? 'Cadastrar novo projeto'
+                          : 'Inscrições encerradas no momento'
+                      }
                     >
                       Cadastrar Projeto
                     </button>
+                    {!podeCadastrarProjeto && (
+                      <div className="text-sm text-red-700 mt-2">
+                        Inscrições encerradas no momento. Aguarde a abertura do próximo período.
+                      </div>
+                    )}
                   </div>
                 ) : (
                   meusProjetos.map((projeto) => (
@@ -395,6 +408,24 @@ const AlunoDashboardIC = () => {
                         </p>
                       </div>
 
+                      {/* Atividades do Projeto */}
+                      {projeto.atividades && projeto.atividades.length > 0 && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 mt-4">
+                          <h4 className="text-sm font-semibold text-blue-900 mb-2">Atividades para Entrega</h4>
+                          <ul className="space-y-2">
+                            {projeto.atividades.map((atv) => (
+                              <li key={atv.id} className="border-b border-blue-100 pb-2 mb-2 last:border-b-0 last:mb-0">
+                                <div className="font-medium text-blue-800">{atv.titulo}</div>
+                                <div className="text-sm text-blue-700">{atv.descricao}</div>
+                                <div className="text-xs text-blue-400">
+                                  Criada em: {new Date(atv.data_criacao).toLocaleDateString()}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
                       <div className="flex space-x-3">
                         {projeto.status === 'ativo' && (
                           <>
@@ -410,6 +441,13 @@ const AlunoDashboardIC = () => {
                               className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
                             >
                               Ver Projeto
+                            </button>
+                            <button
+                              onClick={() => window.location.href = `/projeto/${projeto.id}/documentos#atividades`}
+                              className="bg-green-100 text-green-700 px-4 py-2 rounded-lg hover:bg-green-200 transition-colors flex items-center space-x-2"
+                            >
+                              <FileText className="h-4 w-4" />
+                              <span>Ver Atividades</span>
                             </button>
                           </>
                         )}
@@ -459,13 +497,28 @@ const AlunoDashboardIC = () => {
                     
                     <button
                       onClick={() => {
-                        setNovoProjeto(prev => ({ ...prev, orientador_id: professor.id.toString() }));
-                        setShowCadastrarProjeto(true);
+                        if (podeCadastrarProjeto) {
+                          setNovoProjeto(prev => ({ ...prev, orientador_id: professor.id.toString() }));
+                          setShowCadastrarProjeto(true);
+                        }
                       }}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                      className={`bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors ${
+                        !podeCadastrarProjeto ? 'bg-gray-200 text-gray-400 hover:bg-gray-200 cursor-not-allowed' : ''
+                      }`}
+                      disabled={!podeCadastrarProjeto}
+                      title={
+                        podeCadastrarProjeto
+                          ? 'Escolher este orientador'
+                          : 'Inscrições encerradas no momento'
+                      }
                     >
                       Escolher como Orientador
                     </button>
+                    {!podeCadastrarProjeto && (
+                      <div className="text-sm text-red-700 mt-2">
+                        Inscrições encerradas no momento. Aguarde a abertura do próximo período.
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
