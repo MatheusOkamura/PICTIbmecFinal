@@ -37,7 +37,7 @@ def determine_user_type(email: str) -> str:
     # O usuário 202302129633 deve ser professor.
     if email:
         if email == "202302129633@ibmec.edu.br" or email.startswith("202302129633"):
-            return "admin_professor"
+            return "admin"
         # Professores: email institucional, não começa com número, termina com ibmec.edu.br
         if email.lower().endswith("@professores.ibmec.edu.br") and not email.split("@")[0][0].isdigit():
             return "professor"
@@ -53,7 +53,7 @@ def check_user_exists(email: str, user_type: str) -> Optional[Dict[str, Any]]:
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        if user_type in ("professor", "admin_professor"):
+        if user_type in ("professor", "admin"):
             cursor.execute("SELECT * FROM orientadores WHERE email = ?", (email,))
             user = cursor.fetchone()
             if user:
@@ -190,7 +190,7 @@ def get_or_create_user(user_data: Dict[str, Any]) -> Dict[str, Any]:
     
     if user_type == "professor":
         new_user = create_professor_from_token(user_data)
-    elif user_type == "admin_professor":
+    elif user_type == "admin":
         # Cria como orientador E como aluno (para compatibilidade)
         new_user = create_professor_from_token(user_data)
         # Também cria como aluno se não existir
@@ -202,7 +202,7 @@ def get_or_create_user(user_data: Dict[str, Any]) -> Dict[str, Any]:
                 create_aluno_from_token(user_data)
         finally:
             conn.close()
-    elif user_type == "aluno" or user_type == "admin":
+    elif user_type == "aluno":
         new_user = create_aluno_from_token(user_data)
     else:
         raise Exception("Tipo de usuário desconhecido")

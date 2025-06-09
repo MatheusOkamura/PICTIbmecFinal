@@ -193,8 +193,47 @@ Faria Lima: https://drive.google.com/file/d/1LeuIZ5r9B4dRPgjKqFK4qk1Q2eWS6NQL/vi
   };
 
   const handleAbrirInscricao = async () => {
-    await fetchAuth('http://localhost:8000/api/v1/projetos/abrir-inscricao', { method: 'POST' });
-    carregarPeriodoInscricao();
+    try {
+      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/abrir-inscricao', { method: 'POST' });
+      if (response.ok) {
+        alert('Inscrições reabertas com sucesso!');
+        carregarPeriodoInscricao();
+      }
+    } catch (error) {
+      alert('Erro ao reabrir inscrições.');
+    }
+  };
+
+  const handleDefinirDataLimite = async () => {
+    if (!novaDataLimite) {
+      alert('Selecione uma data limite!');
+      return;
+    }
+    try {
+      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/definir-data-limite', {
+        method: 'POST',
+        body: JSON.stringify({ data_limite: novaDataLimite }),
+      });
+      if (response.ok) {
+        alert('Data limite definida com sucesso!');
+        setNovaDataLimite('');
+        carregarPeriodoInscricao();
+      }
+    } catch (error) {
+      alert('Erro ao definir data limite.');
+    }
+  };
+
+  const carregarTodosProjetos = async () => {
+    try {
+      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/todos-projetos');
+      if (response.ok) {
+        const projetos = await response.json();
+        console.log('Todos os projetos:', projetos);
+      }
+    } catch (error) {
+      alert('Erro ao carregar todos os projetos.');
+    }
   };
 
   // Handlers for Home texts/images

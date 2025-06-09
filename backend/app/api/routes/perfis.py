@@ -150,7 +150,7 @@ async def atualizar_perfil_professor(perfil: PerfilProfessor, current_user: dict
             return {"message": "Perfil atualizado com sucesso"}
         finally:
             conn.close()
-    elif current_user.get('user_type') == 'admin':
+    elif current_user.get('user_type') in ('admin',):
         # Admin pode editar nome, email, telefone, titulacao, lattes_url, biografia, areas_interesse
         conn = get_db_connection()
         cursor = conn.cursor()

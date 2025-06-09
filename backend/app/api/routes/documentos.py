@@ -102,6 +102,9 @@ async def upload_documento(
 @router.get("/projeto/{projeto_id}")
 async def listar_documentos(projeto_id: int, current_user: dict = Depends(get_current_user)):
     """Lista documentos de um projeto"""
+    if current_user.get('user_type') not in ('aluno', 'professor', 'admin', 'admin_professor'):
+        raise HTTPException(status_code=403, detail="Sem permissão para acessar este projeto")
+    
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -160,6 +163,9 @@ async def comentar_documento(
     current_user: dict = Depends(get_current_user)
 ):
     """Adiciona comentário a um documento"""
+    if current_user.get('user_type') not in ('aluno', 'professor', 'admin', 'admin_professor'):
+        raise HTTPException(status_code=403, detail="Sem permissão para comentar")
+    
     conn = get_db_connection()
     cursor = conn.cursor()
     

@@ -122,7 +122,6 @@ async def listar_orientadores(current_user: dict = Depends(get_current_user)):
     """Lista todos os orientadores disponíveis"""
     conn = get_db_connection()
     cursor = conn.cursor()
-    
     try:
         cursor.execute("""
             SELECT id, nome, email, area_pesquisa, titulacao, areas_interesse,
@@ -130,17 +129,11 @@ async def listar_orientadores(current_user: dict = Depends(get_current_user)):
             FROM orientadores
             ORDER BY nome
         """)
-        
         orientadores = []
         for row in cursor.fetchall():
             orientador = dict(row)
-            # Converter areas_interesse de string para lista
-            if orientador['areas_interesse']:
-                orientador['areas'] = orientador['areas_interesse'].split(',')
-            else:
-                orientador['areas'] = []
+            orientador['areas'] = orientador['areas_interesse'].split(',') if orientador['areas_interesse'] else []
             orientadores.append(orientador)
-        
         return orientadores
     finally:
         conn.close()
@@ -150,19 +143,11 @@ async def cadastrar_projeto(projeto: ProjetoCadastro, current_user: dict = Depen
     """Cadastra um novo projeto"""
     if current_user.get('user_type') not in ('aluno', 'admin'):
         raise HTTPException(status_code=403, detail="Apenas alunos ou admin podem cadastrar projetos")
-    # Verifica se o período está aberto e dentro da data limite
-    if current_user.get('user_type') == 'aluno':
-        periodo = get_inscricao_periodo()
-        from datetime import datetime as dt
-        if not periodo.get("aberto", True):
-            raise HTTPException(status_code=403, detail="Inscrições estão fechadas no momento.")
-        data_limite = periodo.get("data_limite")
-        if data_limite:
-            try:
-                if dt.now() > dt.fromisoformat(data_limite):
-                    raise HTTPException(status_code=403, detail="O período de inscrição já foi encerrado.")
-            except Exception:
-                pass
+    periodo = get_inscricao_periodo()
+    if not periodo.get("aberto", True):
+        raise HTTPException(status_code=403, detail="Inscrições estão fechadas no momento.")
+    if periodo.get("data_limite") and datetime.now() > datetime.fromisoformat(periodo["data_limite"]):
+        raise HTTPException(status_code=403, detail="O período de inscrição já foi encerrado.")
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -224,8 +209,8 @@ async def meus_projetos(current_user: dict = Depends(get_current_user)):
 @router.get("/pendentes")
 async def projetos_pendentes(current_user: dict = Depends(get_current_user)):
     """Lista projetos pendentes para o orientador"""
-    if current_user.get('user_type') not in ('professor', 'orientador', 'admin_professor'):
-        raise HTTPException(status_code=403, detail="Endpoint apenas para professores")
+    if current_user.get('user_type') not in ('professor', 'admin'):
+        raise HTTPException(status_code=403, detail="Endpoint apenas para professores ou admin")
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -251,8 +236,8 @@ async def projetos_pendentes(current_user: dict = Depends(get_current_user)):
 @router.get("/ativos")
 async def projetos_ativos(current_user: dict = Depends(get_current_user)):
     """Lista projetos ativos do orientador"""
-    if current_user.get('user_type') not in ('professor', 'orientador', 'admin_professor'):
-        raise HTTPException(status_code=403, detail="Endpoint apenas para professores")
+    if current_user.get('user_type') not in ('professor', 'admin'):
+        raise HTTPException(status_code=403, detail="Endpoint apenas para professores ou admin")
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -280,8 +265,8 @@ async def projetos_ativos(current_user: dict = Depends(get_current_user)):
 @router.post("/aprovar/{projeto_id}")
 async def aprovar_projeto(projeto_id: int, current_user: dict = Depends(get_current_user)):
     """Aprova um projeto"""
-    if current_user.get('user_type') not in ('professor', 'orientador', 'admin_professor'):
-        raise HTTPException(status_code=403, detail="Apenas orientadores podem aprovar projetos")
+    if current_user.get('user_type') not in ('professor', 'admin'):
+        raise HTTPException(status_code=403, detail="Apenas orientadores ou admin podem aprovar projetos")
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -309,7 +294,7 @@ async def aprovar_projeto(projeto_id: int, current_user: dict = Depends(get_curr
 @router.get("/todos-pendentes")
 async def todos_projetos_pendentes(current_user: dict = Depends(get_current_user)):
     """Lista todos os projetos pendentes (admin)"""
-    if current_user.get('user_type') != 'admin':
+    if current_user.get('user_type') not in ('admin',):
         raise HTTPException(status_code=403, detail="Apenas admin pode acessar todos os projetos pendentes")
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -333,7 +318,7 @@ async def todos_projetos_pendentes(current_user: dict = Depends(get_current_user
 @router.get("/todos-ativos")
 async def todos_projetos_ativos(current_user: dict = Depends(get_current_user)):
     """Lista todos os projetos ativos (admin)"""
-    if current_user.get('user_type') != 'admin':
+    if current_user.get('user_type') not in ('admin',):
         raise HTTPException(status_code=403, detail="Apenas admin pode acessar todos os projetos ativos")
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -462,8 +447,8 @@ async def get_periodo_inscricao():
 @router.post("/inscricao-periodo")
 async def set_periodo_inscricao(data: dict, current_user: dict = Depends(get_current_user)):
     """Admin define a data limite e status de inscrição"""
-    if current_user.get('user_type') != 'admin':
-        raise HTTPException(status_code=403, detail="Apenas admin pode definir o período de inscrição")
+    if current_user.get('user_type') not in ('admin', 'admin_professor'):
+        raise HTTPException(status_code=403, detail="Apenas admin ou admin_professor podem definir o período de inscrição")
     data_limite = data.get("data_limite")
     aberto = data.get("aberto", True)
     set_inscricao_periodo(data_limite, aberto)
@@ -472,20 +457,56 @@ async def set_periodo_inscricao(data: dict, current_user: dict = Depends(get_cur
 @router.post("/abrir-inscricao")
 async def abrir_inscricao(current_user: dict = Depends(get_current_user)):
     """Admin reabre o período de inscrição"""
-    if current_user.get('user_type') != 'admin':
+    if current_user.get('user_type') not in ('admin',):
         raise HTTPException(status_code=403, detail="Apenas admin pode abrir inscrições")
+    
     periodo = get_inscricao_periodo()
     set_inscricao_periodo(periodo.get("data_limite"), True)
-    return {"message": "Inscrições reabertas"}
+    return {"message": "Inscrições reabertas com sucesso"}
 
 @router.post("/fechar-inscricao")
 async def fechar_inscricao(current_user: dict = Depends(get_current_user)):
     """Admin fecha o período de inscrição"""
-    if current_user.get('user_type') != 'admin':
+    if current_user.get('user_type') not in ('admin',):
         raise HTTPException(status_code=403, detail="Apenas admin pode fechar inscrições")
+    
     periodo = get_inscricao_periodo()
     set_inscricao_periodo(periodo.get("data_limite"), False)
     return {"message": "Inscrições fechadas"}
+
+@router.post("/definir-data-limite")
+async def definir_data_limite(data: dict, current_user: dict = Depends(get_current_user)):
+    """Admin define a data limite para inscrições"""
+    if current_user.get('user_type') not in ('admin',):
+        raise HTTPException(status_code=403, detail="Apenas admin pode definir a data limite")
+    
+    data_limite = data.get("data_limite")
+    if not data_limite:
+        raise HTTPException(status_code=400, detail="Data limite é obrigatória")
+    
+    set_inscricao_periodo(data_limite, True)
+    return {"message": "Data limite definida com sucesso", "data_limite": data_limite}
+
+@router.get("/todos-projetos")
+async def listar_todos_projetos(current_user: dict = Depends(get_current_user)):
+    """Admin lista todos os projetos no banco de dados"""
+    if current_user.get('user_type') not in ('admin',):
+        raise HTTPException(status_code=403, detail="Apenas admin pode visualizar todos os projetos")
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT p.*, a.nome as aluno_nome, o.nome as orientador_nome
+            FROM projetos p
+            LEFT JOIN alunos a ON p.aluno_id = a.id
+            LEFT JOIN orientadores o ON p.orientador_id = o.id
+            ORDER BY p.data_submissao DESC
+        """)
+        projetos = [dict(row) for row in cursor.fetchall()]
+        return projetos
+    finally:
+        conn.close()
 
 @router.get("/home-texts")
 async def get_home_texts():

@@ -8,5 +8,5 @@ class Atividade(Base):
     nome = Column(String, nullable=False)
     descricao = Column(String)
     projeto_id = Column(Integer, ForeignKey("projetos.id"))
-    professor_id = Column(Integer, ForeignKey("professores.id"))
+    professor_id = Column(Integer, ForeignKey("orientadores.id"))
     data_criacao = Column(DateTime)

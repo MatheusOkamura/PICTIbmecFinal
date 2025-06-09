@@ -59,6 +59,22 @@ const AlunoDashboardIC = () => {
     setLoading(false);
   }, []);
 
+  useEffect(() => {
+    const carregarDados = async () => {
+      try {
+        const projetosRes = await fetchAuth('http://localhost:8000/api/v1/projetos/meus-projetos');
+        if (projetosRes.ok) {
+          const projetos = await projetosRes.json();
+          setMeusProjetos(projetos);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar projetos:', error);
+      }
+    };
+
+    carregarDados();
+  }, []);
+
   const carregarDados = async () => {
     try {
       // Carregar meus projetos

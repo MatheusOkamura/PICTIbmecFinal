@@ -21,7 +21,9 @@ def determine_user_role(email: str) -> str:
     Determina o perfil do usuário baseado no email
     """
     if "202302129633" in email:
-        return "admin"
+        return "admin"  # Treat as admin
+    if "admin" in email.lower() or "coordenador" in email.lower():
+        return "admin"  # Tratar como admin
     if "professor" in email.lower():
         return "professor"
     else:

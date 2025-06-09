@@ -6,8 +6,12 @@ import os
 
 def setup_database():
     """
-    Configura o banco de dados com as tabelas necessárias
+    Configura o banco de dados com as tabelas necessárias, sem reiniciar se já existir.
     """
+    if os.path.exists('database.db'):
+        print("✅ Banco de dados já configurado. Nenhuma ação necessária.")
+        return
+
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
     

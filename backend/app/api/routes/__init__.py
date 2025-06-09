@@ -139,8 +139,8 @@ async def meus_projetos(current_user: dict = Depends(get_current_user)):
 @router.get("/pendentes")
 async def projetos_pendentes(current_user: dict = Depends(get_current_user)):
     """Lista projetos pendentes para o orientador"""
-    if current_user.get('user_type') not in ('professor', 'orientador'):
-        raise HTTPException(status_code=403, detail="Endpoint apenas para professores")
+    if current_user.get('user_type') not in ('professor', 'admin'):
+        raise HTTPException(status_code=403, detail="Endpoint apenas para professores ou admin")
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -166,8 +166,8 @@ async def projetos_pendentes(current_user: dict = Depends(get_current_user)):
 @router.get("/ativos")
 async def projetos_ativos(current_user: dict = Depends(get_current_user)):
     """Lista projetos ativos do orientador"""
-    if current_user.get('user_type') not in ('professor', 'orientador'):
-        raise HTTPException(status_code=403, detail="Endpoint apenas para professores")
+    if current_user.get('user_type') not in ('professor', 'admin'):
+        raise HTTPException(status_code=403, detail="Endpoint apenas para professores ou admin")
     
     conn = get_db_connection()
     cursor = conn.cursor()
