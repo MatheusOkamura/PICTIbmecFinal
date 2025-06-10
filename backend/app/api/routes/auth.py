@@ -32,19 +32,12 @@ def get_db_connection():
 
 def determine_user_type(email: str) -> str:
     """Determina se é admin, professor ou aluno baseado no email"""
-    # Professores do IBMEC normalmente têm email institucional terminando com '@ibmec.edu.br'
-    # e não possuem números no início como alunos.
-    # O usuário 202302129633 deve ser professor.
-    if email:
-        if email == "202302129633@ibmec.edu.br" or email.startswith("202302129633"):
-            return "admin"
-        # Professores: email institucional, não começa com número, termina com ibmec.edu.br
-        if email.lower().endswith("@professores.ibmec.edu.br") and not email.split("@")[0][0].isdigit():
-            return "professor"
-        # Admin: palavra 'admin' ou 'coordenador' no email
-        if "admin" in email.lower() or "coordenador" in email.lower():
-            return "admin"
-    return "aluno"
+    if "202302129633" in email:
+        return "admin"
+    if "professor" in email.lower():
+        return "professor"
+    else:
+        return "aluno"
 
 def check_user_exists(email: str, user_type: str) -> Optional[Dict[str, Any]]:
     """
@@ -52,23 +45,23 @@ def check_user_exists(email: str, user_type: str) -> Optional[Dict[str, Any]]:
     """
     conn = get_db_connection()
     cursor = conn.cursor()
+    
     try:
-        if user_type in ("professor", "admin"):
+        if user_type == "professor":
             cursor.execute("SELECT * FROM orientadores WHERE email = ?", (email,))
-            user = cursor.fetchone()
-            if user:
-                return dict(user)
-        if user_type == "aluno":
+        elif user_type == "aluno":
             cursor.execute("SELECT * FROM alunos WHERE email = ?", (email,))
-            user = cursor.fetchone()
-            if user:
-                return dict(user)
-        if user_type == "admin":
-            cursor.execute("SELECT * FROM alunos WHERE email = ?", (email,))
-            user = cursor.fetchone()
-            if user:
-                return dict(user)
+        elif user_type == "admin":
+            cursor.execute("SELECT * FROM alunos WHERE email = ?", (email,))  # Admin é um aluno especial
+        else:
+            return None
+        
+        user = cursor.fetchone()
+        
+        if user:
+            return dict(user)
         return None
+        
     finally:
         conn.close()
 
@@ -178,6 +171,7 @@ def get_or_create_user(user_data: Dict[str, Any]) -> Dict[str, Any]:
     
     # Verificar se já existe
     existing_user = check_user_exists(email, user_type)
+    
     if existing_user:
         print(f"✅ Usuário existente encontrado: {existing_user.get('nome')}")
         return {
@@ -185,27 +179,17 @@ def get_or_create_user(user_data: Dict[str, Any]) -> Dict[str, Any]:
             "user_type": user_type,
             "is_new_user": False
         }
+    
     # Se não existe, criar
     print(f"🆕 Criando novo usuário...")
     
     if user_type == "professor":
         new_user = create_professor_from_token(user_data)
-    elif user_type == "admin":
-        # Cria como orientador E como aluno (para compatibilidade)
-        new_user = create_professor_from_token(user_data)
-        # Também cria como aluno se não existir
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        try:
-            cursor.execute("SELECT * FROM alunos WHERE email = ?", (email,))
-            if not cursor.fetchone():
-                create_aluno_from_token(user_data)
-        finally:
-            conn.close()
-    elif user_type == "aluno":
+    elif user_type == "aluno" or user_type == "admin":
         new_user = create_aluno_from_token(user_data)
     else:
         raise Exception("Tipo de usuário desconhecido")
+    
     return {
         **new_user,
         "user_type": user_type,
