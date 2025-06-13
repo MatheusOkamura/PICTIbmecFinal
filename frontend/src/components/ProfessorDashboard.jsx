@@ -72,30 +72,15 @@ const ProfessorDashboardIC = () => {
         carregarDados();
       } catch (error) {
         console.error('Erro ao decodificar token:', error);
-      }
-    } else {
+      }    } else {
       carregarDados();
     }
-    setLoading(false);  }, [carregarDados]);
-
-  const carregarDados = useCallback(async () => {
-    try {
-      // Carregar projetos pendentes
-      const pendentesRes = await fetchAuth('http://localhost:8000/api/v1/projetos/pendentes');
-      if (pendentesRes.ok) {
-        const pendentes = await pendentesRes.json();
-        setProjetosPendentes(pendentes);
-      }
-
-      // Carregar projetos ativos
-      const ativosRes = await fetchAuth('http://localhost:8000/api/v1/projetos/ativos');
-      if (ativosRes.ok) {
-        const ativos = await ativosRes.json();
-        setProjetosAtivos(ativos);      }
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-    }
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    carregarDados();
+  }, [carregarDados]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');

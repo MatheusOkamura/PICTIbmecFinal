@@ -83,47 +83,14 @@ const AlunoDashboard = () => {
         carregarDados();
       } catch (error) {
         console.error('Erro ao decodificar token:', error);
-      }
-    } else {
+      }    } else {
       carregarDados();
     }
-    setLoading(false);
-  }, []);
+    setLoading(false);  }, []);
 
   useEffect(() => {
-    const carregarDados = async () => {
-      try {
-        const projetosRes = await fetchAuth('http://localhost:8000/api/v1/projetos/meus-projetos');
-        if (projetosRes.ok) {
-          const projetos = await projetosRes.json();
-          setMeusProjetos(projetos);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar projetos:', error);
-      }
-    };    carregarDados();
+    carregarDados();
   }, [carregarDados]);
-
-  const carregarDados = useCallback(async () => {
-    try {
-      // Carregar meus projetos
-      const projetosRes = await fetchAuth('http://localhost:8000/api/v1/projetos/meus-projetos');
-      if (projetosRes.ok) {
-        const projetos = await projetosRes.json();
-        setMeusProjetos(projetos);
-      }
-
-      // Carregar professores
-      const professoresRes = await fetchAuth('http://localhost:8000/api/v1/projetos/orientadores');
-      if (professoresRes.ok) {
-        const profs = await professoresRes.json();
-        setProfessores(profs);
-      }      // Carregar período de inscrição
-      carregarPeriodoInscricao();
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-    }
-  }, [carregarPeriodoInscricao]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');

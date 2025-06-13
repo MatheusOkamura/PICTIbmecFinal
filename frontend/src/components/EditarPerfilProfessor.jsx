@@ -54,7 +54,6 @@ const EditarPerfilProfessor = ({ isAdmin, onClose, afterSave }) => {
       console.error('Erro ao carregar perfil:', error);
     }
   }, []);
-
   useEffect(() => {
     // Obter dados do usuário do token
     const token = localStorage.getItem('token');
@@ -67,33 +66,6 @@ const EditarPerfilProfessor = ({ isAdmin, onClose, afterSave }) => {
         console.error('Erro ao decodificar token:', error);
       }
     }  }, [carregarPerfil]);
-
-  const carregarPerfil = useCallback(async () => {
-    try {
-      const response = await fetchAuth('http://localhost:8000/api/v1/perfis/meu-perfil');
-      if (response.ok) {
-        const perfilData = await response.json();
-        let areas = perfilData.areas_interesse;
-        if (!Array.isArray(areas)) {
-          if (typeof areas === "string" && areas.length > 0) {
-            areas = areas.split(',').map(a => a.trim()).filter(Boolean);
-          } else {
-            areas = [];
-          }
-        }
-        setPerfil({
-          nome: perfilData.nome || '',
-          email: perfilData.email || '',
-          telefone: perfilData.telefone || '',
-          titulacao: perfilData.titulacao || '',
-          lattes_url: perfilData.lattes_url || '',
-          biografia: perfilData.biografia || '',
-          areas_interesse: areas
-        });      }
-    } catch (error) {
-      console.error('Erro ao carregar perfil:', error);
-    }
-  }, []);
 
   const adicionarArea = () => {
     if (novaArea.trim() && !perfil.areas_interesse.includes(novaArea.trim())) {
