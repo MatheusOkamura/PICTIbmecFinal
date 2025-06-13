@@ -18,7 +18,7 @@ Página IBEMC: (https://blog.ibmec.br/conteudo-gratuito/fique-por-dentro-inscric
 
 ### 2. Frontend (React)
 
-### Autenticação:
+### 3. Autenticação:
 - OAuth2 com Microsoft Azure AD
 
 
