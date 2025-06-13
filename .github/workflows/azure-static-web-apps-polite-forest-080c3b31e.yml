@@ -35,7 +35,10 @@ jobs:
       - name: Build project
         run: |
           cd frontend
-          npm run build
+          CI=false npm run build
+        env:
+          GENERATE_SOURCEMAP: false
+          CI: false
       
       - name: Build And Deploy
         id: builddeploy

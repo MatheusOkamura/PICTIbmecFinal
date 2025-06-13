@@ -36,31 +36,9 @@ const ProjetosAnteriores = () => {
           subtitulo: 'Erro ao conectar ao servidor. Verifique sua conexão ou tente novamente mais tarde.',
           edicoes: []
         }));
-      }
-    };
+      }    };
     fetchEdicoesTexts();
   }, []);
-
-  // Função para o admin enviar um novo projeto (exemplo de uso no AdminDashboard)
-  // newProjeto: { ano, titulo, aluno, orientador, arquivo (File) }
-  async function enviarNovoProjetoAdmin(newProjeto) {
-    const formData = new FormData();
-    formData.append('ano', newProjeto.ano);
-    formData.append('titulo', newProjeto.titulo);
-    formData.append('aluno', newProjeto.aluno);
-    formData.append('orientador', newProjeto.orientador);
-    if (newProjeto.arquivo) {
-      formData.append('arquivo', newProjeto.arquivo);
-    }
-    // Não defina Content-Type aqui!
-    await fetch('http://localhost:8000/api/v1/projetos/edicoes-anteriores/projetos', {
-      method: 'POST',
-      body: formData
-      // headers: { 'Content-Type': 'application/json' }  // REMOVIDO!
-    });
-  }
-
-  const voltar = () => window.history.back();
 
   return (
     <div className="min-h-screen bg-white">
