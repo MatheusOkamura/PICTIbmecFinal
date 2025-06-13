@@ -1,0 +1,25 @@
+{
+  "routes": [
+    {
+      "route": "/static/*",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "route": "/*",
+      "rewrite": "/index.html"
+    }
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "*.{css,scss,sass,js,ts,tsx,jsx}",
+      "*.{png,jpg,jpeg,gif,svg,ico}",
+      "/static/*"
+    ]
+  },
+  "mimeTypes": {
+    ".json": "application/json"
+  }
+}

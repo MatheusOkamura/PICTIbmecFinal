@@ -19,6 +19,24 @@ jobs:
         with:
           submodules: true
           lfs: false
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+      
+      - name: Build project
+        run: |
+          cd frontend
+          npm run build
+      
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -31,6 +49,7 @@ jobs:
           app_location: "./frontend" # App source code path
           api_location: "" # Api source code path - optional
           output_location: "build" # Built app content directory - optional
+          skip_app_build: true # Skip building the app since we built it manually
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
