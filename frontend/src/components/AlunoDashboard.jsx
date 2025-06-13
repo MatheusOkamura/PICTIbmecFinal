@@ -80,13 +80,12 @@ const AlunoDashboard = () => {
         localStorage.setItem('token', token);
         
         // Carregar dados da API
-        carregarDados();
-      } catch (error) {
+        carregarDados();      } catch (error) {
         console.error('Erro ao decodificar token:', error);
       }    } else {
       carregarDados();
     }
-    setLoading(false);  }, []);
+    setLoading(false);  }, [carregarDados]);
 
   useEffect(() => {
     carregarDados();
