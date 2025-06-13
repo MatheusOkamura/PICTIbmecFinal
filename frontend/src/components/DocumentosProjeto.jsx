@@ -3,7 +3,6 @@ import { Upload, FileText, MessageSquare, Calendar, User, ArrowLeft, Send, Downl
 
 const DocumentosProjeto = () => {
   const [user, setUser] = useState(null);
-  const [projeto, setProjeto] = useState(null);
   const [documentos, setDocumentos] = useState([]);
   const [atividades, setAtividades] = useState([]);
   const [loading, setLoading] = useState(true);

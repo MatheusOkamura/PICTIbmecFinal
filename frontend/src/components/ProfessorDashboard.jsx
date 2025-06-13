@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, GraduationCap, Users, BookOpen, Calendar, Settings, LogOut, Bell, Search, CheckCircle, Clock, Edit3, FileText, MessageSquare, PlusCircle } from 'lucide-react';
+import { GraduationCap, Users, BookOpen, Calendar, LogOut, Bell, CheckCircle, Clock, Edit3, FileText, PlusCircle } from 'lucide-react';
 
 const ProfessorDashboardIC = () => {
   const [user, setUser] = useState(null);

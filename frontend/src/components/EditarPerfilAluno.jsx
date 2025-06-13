@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, GraduationCap, Save, ArrowLeft, Calendar, Plus, X } from 'lucide-react';
+import { User, GraduationCap, Save, ArrowLeft, Plus, X } from 'lucide-react';
 
 const EditarPerfilAluno = () => {
   const [user, setUser] = useState(null);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GraduationCap, Users, BookOpen, Award, CheckCircle, ArrowRight, LogIn, Search, Calendar, FileText } from 'lucide-react';
+import { GraduationCap, Users, BookOpen, Award, CheckCircle, ArrowRight, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
@@ -412,10 +412,10 @@ const Home = () => {
             <div>
               <h3 className="text-lg font-semibold mb-4">Links Úteis</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white">Como Participar</a></li>
-                <li><a href="#" className="hover:text-white">Regulamento</a></li>
-                <li><a href="#" className="hover:text-white">Orientadores</a></li>
-                <li><a href="#" className="hover:text-white">Projetos em Destaque</a></li>
+                <li><button type="button" className="hover:text-white">Como Participar</button></li>
+                <li><button type="button" className="hover:text-white">Regulamento</button></li>
+                <li><button type="button" className="hover:text-white">Orientadores</button></li>
+                <li><button type="button" className="hover:text-white">Projetos em Destaque</button></li>
               </ul>
             </div>
             <div>
