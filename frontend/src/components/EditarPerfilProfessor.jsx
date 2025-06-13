@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { User, GraduationCap, Save, ArrowLeft, Plus, X } from 'lucide-react';
 
 const EditarPerfilProfessor = ({ isAdmin, onClose, afterSave }) => {
@@ -39,10 +39,9 @@ const EditarPerfilProfessor = ({ isAdmin, onClose, afterSave }) => {
       } catch (error) {
         console.error('Erro ao decodificar token:', error);
       }
-    }
-  }, []);
+    }  }, [carregarPerfil]);
 
-  const carregarPerfil = async () => {
+  const carregarPerfil = useCallback(async () => {
     try {
       const response = await fetchAuth('http://localhost:8000/api/v1/perfis/meu-perfil');
       if (response.ok) {
@@ -64,11 +63,10 @@ const EditarPerfilProfessor = ({ isAdmin, onClose, afterSave }) => {
           biografia: perfilData.biografia || '',
           areas_interesse: areas
         });
-      }
-    } catch (error) {
+      }    } catch (error) {
       console.error('Erro ao carregar perfil:', error);
     }
-  };
+  }, []);
 
   const adicionarArea = () => {
     if (novaArea.trim() && !perfil.areas_interesse.includes(novaArea.trim())) {

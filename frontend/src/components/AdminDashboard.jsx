@@ -29,7 +29,6 @@ const AdminDashboardIC = () => {
   });  const [newEdicao, setNewEdicao] = useState({ ano: '' });
   const [newProjeto, setNewProjeto] = useState({ titulo: '', aluno: '', orientador: '', arquivo: '', ano: '' });
   const [showEditarPerfil, setShowEditarPerfil] = useState(false);
-  const [perfilAdmin, setPerfilAdmin] = useState({ nome: '', email: '' });
   const fetchAuth = async (url, options = {}) => {
     const token = localStorage.getItem('token');
     return fetch(url, {
@@ -334,29 +333,8 @@ const AdminDashboardIC = () => {
       }
     } catch (error) {
       alert('Erro ao remover projeto.');
-    }
-  };
-  // Carregar perfil admin
-  const carregarPerfilAdmin = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8000/api/v1/perfis/meu-perfil', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const perfil = await res.json();
-        setPerfilAdmin({ nome: perfil.nome || '', email: perfil.email || '' });
-      }
-    } catch {
-      // Error handling
-    }
-  };
-
-  useEffect(() => {
-    carregarPerfilAdmin();
-    // eslint-disable-next-line
-  }, []);
-
+    }  };
+  
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

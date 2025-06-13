@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { User, GraduationCap, BookOpen, Calendar, LogOut, Bell, Plus, FileText, Edit3, Upload } from 'lucide-react';
 
 const AlunoDashboard = () => {
@@ -70,12 +70,10 @@ const AlunoDashboard = () => {
       } catch (error) {
         console.error('Erro ao carregar projetos:', error);
       }
-    };
+    };    carregarDados();
+  }, [carregarDados]);
 
-    carregarDados();
-  }, []);
-
-  const carregarDados = async () => {
+  const carregarDados = useCallback(async () => {
     try {
       // Carregar meus projetos
       const projetosRes = await fetchAuth('http://localhost:8000/api/v1/projetos/meus-projetos');
@@ -92,11 +90,10 @@ const AlunoDashboard = () => {
       }
 
       // Carregar período de inscrição
-      carregarPeriodoInscricao();
-    } catch (error) {
+      carregarPeriodoInscricao();    } catch (error) {
       console.error('Erro ao carregar dados:', error);
     }
-  };
+  }, []);
 
   const carregarPeriodoInscricao = async () => {
     try {

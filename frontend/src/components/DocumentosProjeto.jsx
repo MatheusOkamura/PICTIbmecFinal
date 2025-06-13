@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Upload, FileText, MessageSquare, Calendar, User, ArrowLeft, Send, Download } from 'lucide-react';
 
 const DocumentosProjeto = () => {
@@ -41,11 +41,10 @@ const DocumentosProjeto = () => {
       } catch (error) {
         console.error('Erro ao decodificar token:', error);
       }
-    }
-    setLoading(false);
-  }, []);
+    }    setLoading(false);
+  }, [carregarDados]);
 
-  const carregarDados = async () => {
+  const carregarDados = useCallback(async () => {
     try {
       // Carregar documentos do projeto
       const response = await fetchAuth(`http://localhost:8000/api/v1/documentos/projeto/${projetoId}`);
@@ -57,11 +56,10 @@ const DocumentosProjeto = () => {
       const atividadesRes = await fetchAuth(`http://localhost:8000/api/v1/documentos/projeto/${projetoId}/atividades`);
       if (atividadesRes.ok) {
         setAtividades(await atividadesRes.json());
-      }
-    } catch (error) {
+      }    } catch (error) {
       console.error('Erro ao carregar documentos:', error);
     }
-  };
+  }, [projetoId]);
 
   const handleUpload = async () => {
     if (!uploadData.arquivo) {

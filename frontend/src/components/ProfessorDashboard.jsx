@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { GraduationCap, Users, BookOpen, Calendar, LogOut, Bell, CheckCircle, Clock, Edit3, FileText, PlusCircle } from 'lucide-react';
 
 const ProfessorDashboardIC = () => {
@@ -57,10 +57,9 @@ const ProfessorDashboardIC = () => {
     } else {
       carregarDados();
     }
-    setLoading(false);
-  }, []);
+    setLoading(false);  }, [carregarDados]);
 
-  const carregarDados = async () => {
+  const carregarDados = useCallback(async () => {
     try {
       // Carregar projetos pendentes
       const pendentesRes = await fetchAuth('http://localhost:8000/api/v1/projetos/pendentes');
@@ -74,11 +73,10 @@ const ProfessorDashboardIC = () => {
       if (ativosRes.ok) {
         const ativos = await ativosRes.json();
         setProjetosAtivos(ativos);
-      }
-    } catch (error) {
+      }    } catch (error) {
       console.error('Erro ao carregar dados:', error);
     }
-  };
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');

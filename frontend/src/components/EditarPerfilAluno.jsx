@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { User, GraduationCap, Save, ArrowLeft, Plus, X } from 'lucide-react';
 
 const EditarPerfilAluno = () => {
@@ -56,10 +56,9 @@ const EditarPerfilAluno = () => {
       } catch (error) {
         console.error('Erro ao decodificar token:', error);
       }
-    }
-  }, []);
+    }  }, [carregarPerfil]);
 
-  const carregarPerfil = async () => {
+  const carregarPerfil = useCallback(async () => {
     try {
       const response = await fetchAuth('http://localhost:8000/api/v1/perfis/meu-perfil');
       if (response.ok) {
@@ -77,11 +76,10 @@ const EditarPerfilAluno = () => {
           linkedin_url: perfilData.linkedin_url || '',
           github_url: perfilData.github_url || ''
         });
-      }
-    } catch (error) {
+      }    } catch (error) {
       console.error('Erro ao carregar perfil:', error);
     }
-  };
+  }, []);
 
   const adicionarInteresse = () => {
     if (novoInteresse.trim() && !perfil.interesses_pesquisa.includes(novoInteresse.trim())) {
