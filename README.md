@@ -6,6 +6,7 @@ Sistema completo de autenticação e dashboards para professores e alunos do IBM
 ## 🌐 URL do Projeto
 - Acesse localmente: [http://localhost:3000/login](http://localhost:3000/login)
 - Página oficial: [https://blog.ibmec.br/conteudo-gratuito/fique-por-dentro-inscricoes-abertas-para-o-pict-2025-ibmec-sp/](https://blog.ibmec.br/conteudo-gratuito/fique-por-dentro-inscricoes-abertas-para-o-pict-2025-ibmec-sp/)
+- Frontend: https://polite-forest-080c3b31e.2.azurestaticapps.net/
 
 ## ⚙️ Tecnologias Utilizadas
 
