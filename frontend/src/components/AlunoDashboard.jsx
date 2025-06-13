@@ -31,8 +31,39 @@ const AlunoDashboard = () => {
       }
     });
   };
-
   // Carregar dados iniciais
+  const carregarPeriodoInscricao = useCallback(async () => {
+    try {
+      const res = await fetchAuth('http://localhost:8000/api/v1/projetos/inscricao-periodo');
+      if (res.ok) {
+        setInscricaoPeriodo(await res.json());
+      }
+    } catch (e) {}
+  }, []);
+
+  const carregarDados = useCallback(async () => {
+    try {
+      // Carregar meus projetos
+      const projetosRes = await fetchAuth('http://localhost:8000/api/v1/projetos/meus-projetos');
+      if (projetosRes.ok) {
+        const projetos = await projetosRes.json();
+        setMeusProjetos(projetos);
+      }
+
+      // Carregar professores
+      const professoresRes = await fetchAuth('http://localhost:8000/api/v1/projetos/orientadores');
+      if (professoresRes.ok) {
+        const profs = await professoresRes.json();
+        setProfessores(profs);
+      }
+
+      // Carregar período de inscrição
+      carregarPeriodoInscricao();
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    }
+  }, [carregarPeriodoInscricao]);
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
@@ -87,22 +118,12 @@ const AlunoDashboard = () => {
       if (professoresRes.ok) {
         const profs = await professoresRes.json();
         setProfessores(profs);
-      }
-
-      // Carregar período de inscrição
-      carregarPeriodoInscricao();    } catch (error) {
+      }      // Carregar período de inscrição
+      carregarPeriodoInscricao();
+    } catch (error) {
       console.error('Erro ao carregar dados:', error);
     }
-  }, []);
-
-  const carregarPeriodoInscricao = async () => {
-    try {
-      const res = await fetchAuth('http://localhost:8000/api/v1/projetos/inscricao-periodo');
-      if (res.ok) {
-        setInscricaoPeriodo(await res.json());
-      }
-    } catch (e) {}
-  };
+  }, [carregarPeriodoInscricao]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');

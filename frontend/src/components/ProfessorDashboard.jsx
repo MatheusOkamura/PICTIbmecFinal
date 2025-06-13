@@ -32,8 +32,27 @@ const ProfessorDashboardIC = () => {
       }
     });
   };
-
   // Carregar dados iniciais
+  const carregarDados = useCallback(async () => {
+    try {
+      // Carregar projetos pendentes
+      const pendentesRes = await fetchAuth('http://localhost:8000/api/v1/projetos/pendentes');
+      if (pendentesRes.ok) {
+        const pendentes = await pendentesRes.json();
+        setProjetosPendentes(pendentes);
+      }
+
+      // Carregar projetos ativos
+      const ativosRes = await fetchAuth('http://localhost:8000/api/v1/projetos/ativos');
+      if (ativosRes.ok) {
+        const ativos = await ativosRes.json();
+        setProjetosAtivos(ativos);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    }
+  }, []);
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
@@ -72,8 +91,8 @@ const ProfessorDashboardIC = () => {
       const ativosRes = await fetchAuth('http://localhost:8000/api/v1/projetos/ativos');
       if (ativosRes.ok) {
         const ativos = await ativosRes.json();
-        setProjetosAtivos(ativos);
-      }    } catch (error) {
+        setProjetosAtivos(ativos);      }
+    } catch (error) {
       console.error('Erro ao carregar dados:', error);
     }
   }, []);

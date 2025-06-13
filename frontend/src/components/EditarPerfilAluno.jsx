@@ -39,9 +39,30 @@ const EditarPerfilAluno = () => {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         ...options.headers
-      }
-    });
+      }    });
   };
+
+  const carregarPerfil = useCallback(async () => {
+    try {
+      const response = await fetchAuth('http://localhost:8000/api/v1/perfis/meu-perfil');
+      if (response.ok) {
+        const perfilData = await response.json();
+        setPerfil({
+          nome: perfilData.nome || '',
+          email: perfilData.email || '',
+          telefone: perfilData.telefone || '',
+          data_nascimento: perfilData.data_nascimento || '',
+          curso: perfilData.curso || '',
+          periodo: perfilData.periodo || '',
+          interesses_pesquisa: perfilData.interesses_pesquisa || [],
+          linkedin_url: perfilData.linkedin_url || '',
+          github_url: perfilData.github_url || ''
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar perfil:', error);
+    }
+  }, []);
 
   useEffect(() => {
     // Obter dados do usuário do token
@@ -75,8 +96,8 @@ const EditarPerfilAluno = () => {
           interesses_pesquisa: perfilData.interesses_pesquisa || [],
           linkedin_url: perfilData.linkedin_url || '',
           github_url: perfilData.github_url || ''
-        });
-      }    } catch (error) {
+        });      }
+    } catch (error) {
       console.error('Erro ao carregar perfil:', error);
     }
   }, []);

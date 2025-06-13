@@ -24,9 +24,26 @@ const DocumentosProjeto = () => {
       headers: {
         'Authorization': `Bearer ${token}`,
         ...options.headers
-      }
-    });
+      }    });
   };
+
+  const carregarDados = useCallback(async () => {
+    try {
+      // Carregar documentos do projeto
+      const response = await fetchAuth(`http://localhost:8000/api/v1/documentos/projeto/${projetoId}`);
+      if (response.ok) {
+        const docs = await response.json();
+        setDocumentos(docs);
+      }
+      // Carregar atividades do projeto
+      const atividadesRes = await fetchAuth(`http://localhost:8000/api/v1/documentos/projeto/${projetoId}/atividades`);
+      if (atividadesRes.ok) {
+        setAtividades(await atividadesRes.json());
+      }
+    } catch (error) {
+      console.error('Erro ao carregar documentos:', error);
+    }
+  }, [projetoId]);
 
   useEffect(() => {
     // Obter dados do usuário do token
@@ -54,9 +71,9 @@ const DocumentosProjeto = () => {
       }
       // Carregar atividades do projeto
       const atividadesRes = await fetchAuth(`http://localhost:8000/api/v1/documentos/projeto/${projetoId}/atividades`);
-      if (atividadesRes.ok) {
-        setAtividades(await atividadesRes.json());
-      }    } catch (error) {
+      if (atividadesRes.ok) {      setAtividades(await atividadesRes.json());
+      }
+    } catch (error) {
       console.error('Erro ao carregar documentos:', error);
     }
   }, [projetoId]);
