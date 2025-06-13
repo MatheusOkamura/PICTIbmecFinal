@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GraduationCap, Users, BookOpen, Calendar, LogOut, Bell, CheckCircle, Clock, Edit3, FileText, Edit } from 'lucide-react';
+import { GraduationCap, Users, BookOpen, Calendar, Settings, LogOut, Bell, CheckCircle, Clock, Edit3, FileText, MessageSquare, Image as ImageIcon, Edit } from 'lucide-react';
 import EditarPerfilProfessor from './EditarPerfilProfessor';
 
 const AdminDashboardIC = () => {
@@ -31,6 +31,7 @@ const AdminDashboardIC = () => {
   const [newProjeto, setNewProjeto] = useState({ titulo: '', aluno: '', orientador: '', arquivo: '', ano: '' });
   const [showEditarPerfil, setShowEditarPerfil] = useState(false);
   const [perfilAdmin, setPerfilAdmin] = useState({ nome: '', email: '' });
+  const [salvandoPerfil, setSalvandoPerfil] = useState(false);
 
   const fetchAuth = async (url, options = {}) => {
     const token = localStorage.getItem('token');
@@ -67,6 +68,30 @@ const AdminDashboardIC = () => {
   }, []);
 
   useEffect(() => {
+    const textoPadraoPICT = `
+Fique por dentro | Inscrições abertas para o PICT 2025 – Ibmec SP
+
+A 6ª edição do Programa de Iniciação Científica e Tecnológica (PICT) já está com inscrições abertas!
+
+Essa é uma oportunidade única para os alunos do Ibmec São Paulo se aprofundarem no universo da pesquisa científica.
+
+Participar da Iniciação Científica é um diferencial importante para sua carreira. O PICT é uma excelente oportunidade de complementar sua formação acadêmica, proporcionando experiência prática e construção de conhecimento científico.
+
+Durante o programa, você terá o suporte de um professor pesquisador experiente, que irá orientá-lo no planejamento, na execução e na apresentação do seu estudo científico. Não perca essa chance de enriquecer seu currículo e desenvolver habilidades que farão toda a diferença no mercado de trabalho!
+
+Como fazer a inscrição no PICT?
+1. Contatar um professor da área de seu interesse e verificar a disponibilidade para a orientação (Edital > Relação de professores/área);
+2. Elaborar uma proposta do projeto para submeter na inscrição;
+3. Reunir os documentos necessários para a inscrição;
+4. Efetivar a sua inscrição no processo seletivo do PICT conforme orientações do Edital (até 18/11/24);
+5. Preparar a apresentação de seu projeto (fevereiro/2025).
+
+As inscrições do programa vão até o dia 18/11/24, e para mais detalhes sobre o PICT 2025, consulte o edital disponível através dos links abaixo:
+
+Paulista: https://drive.google.com/file/d/1hOlRuJ1D_4Wt8qkCSwX9IVQaBj9bHeJg/view
+Faria Lima: https://drive.google.com/file/d/1LeuIZ5r9B4dRPgjKqFK4qk1Q2eWS6NQL/view
+`.trim();
+
     const fetchHomeTexts = async () => {
       try {
         const response = await fetchAuth('http://localhost:8000/api/v1/projetos/home-texts');
@@ -176,6 +201,38 @@ const AdminDashboardIC = () => {
       }
     } catch (error) {
       alert('Erro ao reabrir inscrições.');
+    }
+  };
+
+  const handleDefinirDataLimite = async () => {
+    if (!novaDataLimite) {
+      alert('Selecione uma data limite!');
+      return;
+    }
+    try {
+      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/definir-data-limite', {
+        method: 'POST',
+        body: JSON.stringify({ data_limite: novaDataLimite }),
+      });
+      if (response.ok) {
+        alert('Data limite definida com sucesso!');
+        setNovaDataLimite('');
+        carregarPeriodoInscricao();
+      }
+    } catch (error) {
+      alert('Erro ao definir data limite.');
+    }
+  };
+
+  const carregarTodosProjetos = async () => {
+    try {
+      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/todos-projetos');
+      if (response.ok) {
+        const projetos = await response.json();
+        console.log('Todos os projetos:', projetos);
+      }
+    } catch (error) {
+      alert('Erro ao carregar todos os projetos.');
     }
   };
 
@@ -908,63 +965,6 @@ const AdminDashboardIC = () => {
               ) : (
                 <span className="text-gray-500">Nenhuma edição cadastrada.</span>
               )}
-            </div>
-            <button
-              onClick={handleSaveEdicoes}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Salvar Alterações
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Welcome Modal */}
-      {showWelcomeModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <div className="text-center">
-              <GraduationCap className="h-16 w-16 text-blue-600 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Bem-vindo ao Portal IC!</h3>
-              <p className="text-gray-600 mb-4">
-                Portal de Iniciação Científica - admin pode visualizar todos os projetos do sistema.
-              </p>
-              <div className="text-left bg-gray-50 rounded-lg p-4 mb-4">
-                <h4 className="font-semibold text-gray-900 mb-2">Como administrador você pode:</h4>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>✅ Visualizar todos os projetos pendentes e ativos</li>
-                  <li>✅ Acompanhar o desenvolvimento de todos os trabalhos</li>
-                  <li>✅ Acessar documentos e detalhes de qualquer projeto</li>
-                </ul>
-              </div>
-              <button 
-                onClick={handleCloseWelcomeModal}
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Começar a usar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Editar Perfil Admin (usar EditarPerfilProfessor) */}
-      {showEditarPerfil && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-            <EditarPerfilProfessor
-              isAdmin
-              onClose={() => setShowEditarPerfil(false)}
-              afterSave={() => setShowEditarPerfil(false)}
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default AdminDashboardIC;
             </div>
             <button
               onClick={handleSaveEdicoes}
