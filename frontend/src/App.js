@@ -2,7 +2,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import PortalICLanding from './components/Home';
 import LoginPage from './components/LoginPage';
-import AlunoDashboardIC from './components/AlunoDashboard';
+import AlunoDashboard from './components/AlunoDashboard';
 import ProfessorDashboardIC from './components/ProfessorDashboard';
 import AdminDashboardIC from './components/AdminDashboard';
 import EditarPerfilAluno from './components/EditarPerfilAluno';
@@ -16,7 +16,7 @@ function App() {
       <Routes>
         <Route path="/" element={<PortalICLanding />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/aluno/dashboard" element={<AlunoDashboardIC />} />
+        <Route path="/aluno/dashboard" element={<AlunoDashboard />} />
         <Route path="/aluno/editar-perfil" element={<EditarPerfilAluno />} />
         <Route path="/professor/dashboard" element={<ProfessorDashboardIC />} />
         <Route path="/professor/editar-perfil" element={<EditarPerfilProfessor />} />
