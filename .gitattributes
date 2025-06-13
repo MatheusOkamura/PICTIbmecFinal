@@ -1,0 +1,18 @@
+# Configurar normalização de terminações de linha
+* text=auto
+
+# Especificar explicitamente arquivos de texto
+*.js text
+*.py text
+*.json text
+*.html text
+*.css text
+*.md text
+*.txt text
+*.bat text
+
+# Binários que não devem ser modificados
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
