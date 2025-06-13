@@ -1,9 +1,36 @@
+<<<<<<< HEAD
 # 🎓 PICT IBMEC 
 
 
 https://blog.ibmec.br/conteudo-gratuito/fique-por-dentro-inscricoes-abertas-para-o-pict-2025-ibmec-sp/
 
 Sistema completo de autenticação e dashboards para professores e alunos do IBMEC usando Microsoft Azure AD.
+=======
+# PICTIbmecFinal
+
+# 🛡️ Sistema de controle para projetos de Iniciação Cientifica IBMEC
+
+## 📌 Descrição
+Sistema completo de autenticação para alunos e professores do IBMEC, com login via Microsoft Azure AD e dashboards. 
+
+## 🌐 URL do Projeto:
+Acesse localmente: [http://localhost:3000/login](http://localhost:3000/login)
+
+## 🌐 URL Base:
+Página IBEMC: (https://blog.ibmec.br/conteudo-gratuito/fique-por-dentro-inscricoes-abertas-para-o-pict-2025-ibmec-sp/)
+
+## ⚙️ Tecnologias Utilizadas
+
+### 1. Backend (FastAPI)
+- SQLite 
+
+### 2. Frontend (React)
+
+### 3. Autenticação:
+- OAuth2 com Microsoft Azure AD
+
+
+>>>>>>> c9be0bdf20d67e3518da80c7641091deeabe2d77
 
 ## 🚀 Instalação e Execução
 
