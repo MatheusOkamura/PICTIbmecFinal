@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, GraduationCap, BookOpen, Calendar, LogOut, Bell, Plus, FileText, Clock, CheckCircle, Users, Edit3, Upload } from 'lucide-react';
+import { User, GraduationCap, BookOpen, Calendar, LogOut, Bell, Plus, FileText, Edit3, Upload } from 'lucide-react';
 
 const AlunoDashboard = () => {
   const [user, setUser] = useState(null);

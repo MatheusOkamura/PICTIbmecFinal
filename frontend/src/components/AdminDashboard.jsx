@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GraduationCap, Users, BookOpen, Calendar, Settings, LogOut, Bell, CheckCircle, Clock, Edit3, FileText, MessageSquare, Image as ImageIcon, Edit } from 'lucide-react';
+import { GraduationCap, Users, BookOpen, Calendar, LogOut, Bell, CheckCircle, Clock, Edit3, FileText, Edit } from 'lucide-react';
 import EditarPerfilProfessor from './EditarPerfilProfessor';
 
 const AdminDashboardIC = () => {
@@ -26,13 +26,10 @@ const AdminDashboardIC = () => {
     bannerImg: null,
     bannerImgPreview: null,
     edicoes: [] // Lista de edições anteriores
-  });
-  const [newEdicao, setNewEdicao] = useState({ ano: '' });
+  });  const [newEdicao, setNewEdicao] = useState({ ano: '' });
   const [newProjeto, setNewProjeto] = useState({ titulo: '', aluno: '', orientador: '', arquivo: '', ano: '' });
   const [showEditarPerfil, setShowEditarPerfil] = useState(false);
   const [perfilAdmin, setPerfilAdmin] = useState({ nome: '', email: '' });
-  const [salvandoPerfil, setSalvandoPerfil] = useState(false);
-
   const fetchAuth = async (url, options = {}) => {
     const token = localStorage.getItem('token');
     return fetch(url, {
@@ -43,6 +40,37 @@ const AdminDashboardIC = () => {
         ...options.headers
       }
     });
+  };
+  const fetchHomeTexts = async () => {
+    try {
+      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/home-texts');
+      if (response.ok) {
+        const data = await response.json();
+        setHomeTexts({
+          titulo: data.titulo || '',
+          subtitulo: data.subtitulo || '',
+          texto_pict: data.texto_pict !== undefined && data.texto_pict !== null ? data.texto_pict : ''
+        });
+      }
+    } catch (error) {
+      setHomeTexts({
+        titulo: '',
+        subtitulo: '',
+        texto_pict: ''
+      });
+    }
+  };
+
+  const fetchEdicoesTexts = async () => {
+    try {
+      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-texts');
+      if (response.ok) {
+        const data = await response.json();
+        setEdicoesTexts(data); // Atualizar os textos da página de Edições Anteriores no estado inicial
+      }
+    } catch (error) {
+      console.error('Erro ao carregar textos da página de Edições Anteriores:', error);
+    }
   };
 
   useEffect(() => {
@@ -63,70 +91,9 @@ const AdminDashboardIC = () => {
     } else {
       carregarDados();
     }
-    setLoading(false);
-    // eslint-disable-next-line
-  }, []);
-
-  useEffect(() => {
-    const textoPadraoPICT = `
-Fique por dentro | Inscrições abertas para o PICT 2025 – Ibmec SP
-
-A 6ª edição do Programa de Iniciação Científica e Tecnológica (PICT) já está com inscrições abertas!
-
-Essa é uma oportunidade única para os alunos do Ibmec São Paulo se aprofundarem no universo da pesquisa científica.
-
-Participar da Iniciação Científica é um diferencial importante para sua carreira. O PICT é uma excelente oportunidade de complementar sua formação acadêmica, proporcionando experiência prática e construção de conhecimento científico.
-
-Durante o programa, você terá o suporte de um professor pesquisador experiente, que irá orientá-lo no planejamento, na execução e na apresentação do seu estudo científico. Não perca essa chance de enriquecer seu currículo e desenvolver habilidades que farão toda a diferença no mercado de trabalho!
-
-Como fazer a inscrição no PICT?
-1. Contatar um professor da área de seu interesse e verificar a disponibilidade para a orientação (Edital > Relação de professores/área);
-2. Elaborar uma proposta do projeto para submeter na inscrição;
-3. Reunir os documentos necessários para a inscrição;
-4. Efetivar a sua inscrição no processo seletivo do PICT conforme orientações do Edital (até 18/11/24);
-5. Preparar a apresentação de seu projeto (fevereiro/2025).
-
-As inscrições do programa vão até o dia 18/11/24, e para mais detalhes sobre o PICT 2025, consulte o edital disponível através dos links abaixo:
-
-Paulista: https://drive.google.com/file/d/1hOlRuJ1D_4Wt8qkCSwX9IVQaBj9bHeJg/view
-Faria Lima: https://drive.google.com/file/d/1LeuIZ5r9B4dRPgjKqFK4qk1Q2eWS6NQL/view
-`.trim();
-
-    const fetchHomeTexts = async () => {
-      try {
-        const response = await fetchAuth('http://localhost:8000/api/v1/projetos/home-texts');
-        if (response.ok) {
-          const data = await response.json();
-          setHomeTexts({
-            titulo: data.titulo || '',
-            subtitulo: data.subtitulo || '',
-            texto_pict: data.texto_pict !== undefined && data.texto_pict !== null ? data.texto_pict : ''
-          });
-        }
-      } catch (error) {
-        setHomeTexts({
-          titulo: '',
-          subtitulo: '',
-          texto_pict: ''
-        });
-      }
-    };
-
-    const fetchEdicoesTexts = async () => {
-      try {
-        const response = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-texts');
-        if (response.ok) {
-          const data = await response.json();
-          setEdicoesTexts(data); // Atualizar os textos da página de Edições Anteriores no estado inicial
-        }
-      } catch (error) {
-        console.error('Erro ao carregar textos da página de Edições Anteriores:', error);
-      }
-    };
 
     fetchHomeTexts();
     fetchEdicoesTexts();
-    carregarDados();
     setLoading(false);
     // eslint-disable-next-line
   }, []);
@@ -199,41 +166,7 @@ Faria Lima: https://drive.google.com/file/d/1LeuIZ5r9B4dRPgjKqFK4qk1Q2eWS6NQL/vi
         alert('Inscrições reabertas com sucesso!');
         carregarPeriodoInscricao();
       }
-    } catch (error) {
-      alert('Erro ao reabrir inscrições.');
-    }
-  };
-
-  const handleDefinirDataLimite = async () => {
-    if (!novaDataLimite) {
-      alert('Selecione uma data limite!');
-      return;
-    }
-    try {
-      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/definir-data-limite', {
-        method: 'POST',
-        body: JSON.stringify({ data_limite: novaDataLimite }),
-      });
-      if (response.ok) {
-        alert('Data limite definida com sucesso!');
-        setNovaDataLimite('');
-        carregarPeriodoInscricao();
-      }
-    } catch (error) {
-      alert('Erro ao definir data limite.');
-    }
-  };
-
-  const carregarTodosProjetos = async () => {
-    try {
-      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/todos-projetos');
-      if (response.ok) {
-        const projetos = await response.json();
-        console.log('Todos os projetos:', projetos);
-      }
-    } catch (error) {
-      alert('Erro ao carregar todos os projetos.');
-    }
+    } catch (error) {      alert('Erro ao reabrir inscrições.');    }
   };
 
   // Handlers for Home texts/images
@@ -273,16 +206,10 @@ Faria Lima: https://drive.google.com/file/d/1LeuIZ5r9B4dRPgjKqFK4qk1Q2eWS6NQL/vi
       }
     } catch (error) {
       console.error('Erro ao salvar textos da Home:', error);
-      alert('Erro ao salvar textos da Home. Tente novamente.');
-    }
+      alert('Erro ao salvar textos da Home. Tente novamente.');    }
   };
 
   // Handlers for Edicoes texts/images
-  const handleEdicoesTextChange = (e) => setEdicoesTexts({ ...edicoesTexts, [e.target.name]: e.target.value });
-  const handleEdicoesImgChange = (e) => {
-    const file = e.target.files[0];
-    setEdicoesTexts({ ...edicoesTexts, bannerImg: file, bannerImgPreview: file ? URL.createObjectURL(file) : null });
-  };
   const handleSaveEdicoes = async () => {
     try {
       const response = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-texts', {
@@ -409,7 +336,6 @@ Faria Lima: https://drive.google.com/file/d/1LeuIZ5r9B4dRPgjKqFK4qk1Q2eWS6NQL/vi
       alert('Erro ao remover projeto.');
     }
   };
-
   // Carregar perfil admin
   const carregarPerfilAdmin = async () => {
     try {
@@ -421,36 +347,15 @@ Faria Lima: https://drive.google.com/file/d/1LeuIZ5r9B4dRPgjKqFK4qk1Q2eWS6NQL/vi
         const perfil = await res.json();
         setPerfilAdmin({ nome: perfil.nome || '', email: perfil.email || '' });
       }
-    } catch {}
+    } catch {
+      // Error handling
+    }
   };
 
   useEffect(() => {
     carregarPerfilAdmin();
     // eslint-disable-next-line
   }, []);
-
-  // Salvar perfil admin
-  const handleSalvarPerfilAdmin = async () => {
-    setSalvandoPerfil(true);
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8000/api/v1/perfis/atualizar-professor', {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(perfilAdmin)
-      });
-      if (res.ok) {
-        alert('Perfil atualizado com sucesso!');
-        setShowEditarPerfil(false);
-      } else {
-        const error = await res.json();
-        alert(`Erro: ${error.detail}`);
-      }
-    } catch {
-      alert('Erro ao salvar perfil.');
-    }
-    setSalvandoPerfil(false);
-  };
 
   if (loading) {
     return (
@@ -1008,8 +913,7 @@ Faria Lima: https://drive.google.com/file/d/1LeuIZ5r9B4dRPgjKqFK4qk1Q2eWS6NQL/vi
       {/* Modal Editar Perfil Admin (usar EditarPerfilProfessor) */}
       {showEditarPerfil && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-            <EditarPerfilProfessor
+          <div className="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">            <EditarPerfilProfessor
               isAdmin
               onClose={() => setShowEditarPerfil(false)}
               afterSave={() => setShowEditarPerfil(false)}
