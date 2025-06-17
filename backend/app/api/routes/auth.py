@@ -293,10 +293,12 @@ async def microsoft_callback(code: str, state: str = None):
         }
         
         print(f"📧 Email obtido: {user_info['email']}")
-        
-        # Verificar se é email IBMEC (permitir testes com qualquer email-habilitar em produção)
-       # if not user_info["email"] or "ibmec.edu.br" not in user_info["email"].lower():
-           # raise HTTPException(status_code=403, detail="Email do IBMEC necessário")
+          # Verificar se é email IBMEC (habilitar em produção)
+        if not user_info["email"] or "ibmec.edu.br" not in user_info["email"].lower():
+            # Para testes, permitir alguns emails específicos
+            test_emails = ["test@test.com", "admin@test.com", "professor@test.com"]
+            if user_info["email"] not in test_emails:
+                raise HTTPException(status_code=403, detail="Email do IBMEC necessário")
         
         # 4. Verificar/Criar usuário no banco local
         db_user = get_or_create_user(user_info)
@@ -348,6 +350,31 @@ async def microsoft_callback(code: str, state: str = None):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Erro: {str(e)}")
+
+@router.get("/verify-token")
+async def verify_token(token: str = Depends(oauth2_scheme)):
+    """
+    Verifica se o token ainda é válido
+    """
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY or "fallback-secret", algorithms=["HS256"])
+        email = payload.get("email")
+        if email is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token inválido"
+            )
+        return {"valid": True, "user": payload}
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token expirado"
+        )
+    except jwt.PyJWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido"
+        )
 
 @router.get("/me", response_model=Dict[str, Any])
 async def get_current_user(token: str = Depends(oauth2_scheme)):

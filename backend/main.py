@@ -38,16 +38,17 @@ def create_application() -> FastAPI:
         debug=settings.DEBUG,
         description="API para autenticação com contas Microsoft do IBMEC com diferentes perfis",
         version="1.0.0"
-    )
-
-    # Configurar CORS para React
+    )    # Configurar CORS para React
     application.add_middleware(
         CORSMiddleware,
         allow_origins=[
             "http://localhost:3000",
             "http://localhost:3001", 
             "https://localhost:3000",
-            settings.FRONTEND_URL
+            "https://localhost:3001",
+            settings.FRONTEND_URL,
+            "https://pictibmec-frontend.azurestaticapps.net",  # URL de produção do frontend
+            "https://*.azurestaticapps.net"  # Permitir subdomínios do Azure Static Web Apps
         ],
         allow_credentials=True,
         allow_methods=["*"],
@@ -109,13 +110,7 @@ async def final_redirect(token: str, email: str):
 
     return RedirectResponse(url=redirect_url)
 
-@app.get("/auth/callback")
-async def auth_callback_redirect(code: str, state: str = None):
-    """Redireciona para a rota correta da API"""
-    redirect_url = f"/api/v1/auth/callback?code={code}"
-    if state:
-        redirect_url += f"&state={state}"
-    return RedirectResponse(url=redirect_url)
+# Rota removida - callback é tratado diretamente pela rota em auth.py
 
 
 if __name__ == "__main__":

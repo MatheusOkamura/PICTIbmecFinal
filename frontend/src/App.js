@@ -9,6 +9,7 @@ import EditarPerfilAluno from './components/EditarPerfilAluno';
 import EditarPerfilProfessor from './components/EditarPerfilProfessor';
 import DocumentosProjeto from './components/DocumentosProjeto';
 import ProjetosAnteriores from './components/ProjetosAnteriores';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -16,14 +17,70 @@ function App() {
       <Routes>
         <Route path="/" element={<PortalICLanding />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/aluno/dashboard" element={<AlunoDashboard />} />
-        <Route path="/aluno/editar-perfil" element={<EditarPerfilAluno />} />
-        <Route path="/professor/dashboard" element={<ProfessorDashboardIC />} />
-        <Route path="/professor/editar-perfil" element={<EditarPerfilProfessor />} />
-        <Route path="/projeto/:id" element={<DocumentosProjeto />} />
-        <Route path="/projeto/:id/documentos" element={<DocumentosProjeto />} />
-        <Route path="/adminDashboard" element={<AdminDashboardIC />} />
-        <Route path="/edicoes-anteriores" element={<ProjetosAnteriores />} />
+        <Route 
+          path="/aluno/dashboard" 
+          element={
+            <ProtectedRoute requiredRole="aluno">
+              <AlunoDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/aluno/editar-perfil" 
+          element={
+            <ProtectedRoute requiredRole="aluno">
+              <EditarPerfilAluno />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/professor/dashboard" 
+          element={
+            <ProtectedRoute requiredRole="professor">
+              <ProfessorDashboardIC />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/professor/editar-perfil" 
+          element={
+            <ProtectedRoute requiredRole="professor">
+              <EditarPerfilProfessor />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/projeto/:id" 
+          element={
+            <ProtectedRoute>
+              <DocumentosProjeto />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/projeto/:id/documentos" 
+          element={
+            <ProtectedRoute>
+              <DocumentosProjeto />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/adminDashboard" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboardIC />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/edicoes-anteriores" 
+          element={
+            <ProtectedRoute>
+              <ProjetosAnteriores />
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
     </Router>
   );

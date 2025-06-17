@@ -71,10 +71,11 @@ const AdminDashboardIC = () => {
       console.error('Erro ao carregar textos da página de Edições Anteriores:', error);
     }
   };
-
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
+    const storedToken = localStorage.getItem('token');
+    
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
@@ -86,9 +87,32 @@ const AdminDashboardIC = () => {
         carregarDados();
       } catch (error) {
         console.error('Erro ao decodificar token:', error);
+        // Token inválido, redirecionar para login
+        window.location.href = '/login';
+      }
+    } else if (storedToken) {
+      try {
+        const payload = JSON.parse(atob(storedToken.split('.')[1]));
+        // Verificar se o token não expirou
+        const currentTime = Date.now() / 1000;
+        if (payload.exp && payload.exp < currentTime) {
+          // Token expirado
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+          return;
+        }
+        setUser(payload);
+        carregarDados();
+      } catch (error) {
+        console.error('Erro ao decodificar token armazenado:', error);
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+        return;
       }
     } else {
-      carregarDados();
+      // Sem token, redirecionar para login
+      window.location.href = '/login';
+      return;
     }
 
     fetchHomeTexts();
