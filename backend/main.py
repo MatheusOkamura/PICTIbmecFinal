@@ -72,9 +72,7 @@ def create_application() -> FastAPI:
         """
         Rota raiz - redireciona para o frontend (Home)
         """
-        return RedirectResponse(url=settings.FRONTEND_URL)
-
-    @application.get("/health")
+        return RedirectResponse(url=settings.FRONTEND_URL)    @application.get("/health")
     async def health_check():
         """
         Health check da API
@@ -88,9 +86,6 @@ def create_application() -> FastAPI:
     return application
 
 app = create_application()
-
-# Remova ou ajuste as rotas /admin/dashboard e /api/v1/admin/dashboard se não forem usadas no frontend.
-# O frontend deve acessar diretamente /adminDashboard, não /admin/dashboard.
 
 @app.get("/auth/redirect")
 async def final_redirect(token: str, email: str):
@@ -110,9 +105,10 @@ async def final_redirect(token: str, email: str):
 
     return RedirectResponse(url=redirect_url)
 
-# Rota removida - callback é tratado diretamente pela rota em auth.py
-
-
+# Azure App Service precisa encontrar a variável 'app' no módulo
+# Configuração da porta para funcionar no Azure
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)

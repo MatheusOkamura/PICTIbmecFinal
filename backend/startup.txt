@@ -1,0 +1,9 @@
+# Arquivo de configuração para Azure App Service
+# Este arquivo será usado pelo Azure para configurar a aplicação
+
+# Comando para iniciar a aplicação
+web: python main.py
+
+# Configurações específicas do Azure
+WEBSITES_PORT=8000
+SCM_DO_BUILD_DURING_DEPLOYMENT=true
