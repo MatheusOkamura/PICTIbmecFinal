@@ -30,13 +30,13 @@ const DocumentosProjeto = () => {
   const carregarDados = useCallback(async () => {
     try {
       // Carregar documentos do projeto
-      const response = await fetchAuth(`http://localhost:8000/api/v1/documentos/projeto/${projetoId}`);
+      const response = await fetchAuth(`https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/documentos/projeto/${projetoId}`);
       if (response.ok) {
         const docs = await response.json();
         setDocumentos(docs);
       }
       // Carregar atividades do projeto
-      const atividadesRes = await fetchAuth(`http://localhost:8000/api/v1/documentos/projeto/${projetoId}/atividades`);
+      const atividadesRes = await fetchAuth(`https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/documentos/projeto/${projetoId}/atividades`);
       if (atividadesRes.ok) {
         setAtividades(await atividadesRes.json());
       }
@@ -72,7 +72,7 @@ const DocumentosProjeto = () => {
     formData.append('comentario', uploadData.comentario);
 
     try {
-      const response = await fetchAuth(`http://localhost:8000/api/v1/documentos/upload/${projetoId}`, {
+      const response = await fetchAuth(`https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/documentos/upload/${projetoId}`, {
         method: 'POST',
         body: formData
       });
@@ -99,7 +99,7 @@ const DocumentosProjeto = () => {
     }
 
     try {
-      const response = await fetchAuth(`http://localhost:8000/api/v1/documentos/comentar/${documentoId}`, {
+      const response = await fetchAuth(`https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/documentos/comentar/${documentoId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

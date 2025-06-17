@@ -44,7 +44,7 @@ const EditarPerfilAluno = () => {
 
   const carregarPerfil = useCallback(async () => {
     try {
-      const response = await fetchAuth('http://localhost:8000/api/v1/perfis/meu-perfil');
+      const response = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/perfis/meu-perfil');
       if (response.ok) {
         const perfilData = await response.json();
         setPerfil({
@@ -99,7 +99,7 @@ const EditarPerfilAluno = () => {
     setSalvando(true);
     
     try {
-      const response = await fetchAuth('http://localhost:8000/api/v1/perfis/atualizar-aluno', {
+      const response = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/perfis/atualizar-aluno', {
         method: 'PUT',
         body: JSON.stringify(perfil)
       });

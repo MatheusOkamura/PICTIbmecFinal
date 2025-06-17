@@ -34,7 +34,7 @@ const AlunoDashboard = () => {
   // Carregar dados iniciais
   const carregarPeriodoInscricao = useCallback(async () => {
     try {
-      const res = await fetchAuth('http://localhost:8000/api/v1/projetos/inscricao-periodo');
+      const res = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/inscricao-periodo');
       if (res.ok) {
         setInscricaoPeriodo(await res.json());
       }
@@ -44,14 +44,14 @@ const AlunoDashboard = () => {
   const carregarDados = useCallback(async () => {
     try {
       // Carregar meus projetos
-      const projetosRes = await fetchAuth('http://localhost:8000/api/v1/projetos/meus-projetos');
+      const projetosRes = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/meus-projetos');
       if (projetosRes.ok) {
         const projetos = await projetosRes.json();
         setMeusProjetos(projetos);
       }
 
       // Carregar professores
-      const professoresRes = await fetchAuth('http://localhost:8000/api/v1/projetos/orientadores');
+      const professoresRes = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/orientadores');
       if (professoresRes.ok) {
         const profs = await professoresRes.json();
         setProfessores(profs);
@@ -109,7 +109,7 @@ const AlunoDashboard = () => {
     }
     
     try {
-      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/cadastrar', {
+      const response = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/cadastrar', {
         method: 'POST',
         body: JSON.stringify({
           titulo: novoProjeto.titulo,

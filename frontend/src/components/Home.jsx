@@ -16,13 +16,13 @@ const Home = () => {
 
   const navigate = useNavigate();
   const handleLogin = () => {
-    window.location.href = 'http://localhost:8000/api/v1/auth/microsoft-login';
+    window.location.href = 'https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/auth/microsoft-login';
   };
 
   useEffect(() => {
     const fetchHomeTexts = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/v1/projetos/home-texts');
+        const response = await fetch('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/home-texts');
         if (response.ok) {
           const data = await response.json();
           setHomeTexts(data);
@@ -35,7 +35,7 @@ const Home = () => {
     // Buscar estatísticas do banco
     const fetchStats = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/v1/projetos/estatisticas');
+        const response = await fetch('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/estatisticas');
         if (response.ok) {
           const stats = await response.json();
           setProjetosTotal(stats.projetos_total || 0);

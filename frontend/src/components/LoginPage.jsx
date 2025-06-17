@@ -4,7 +4,7 @@ import { GraduationCap, LogIn, Shield, Users, BookOpen } from 'lucide-react';
 const LoginPage = () => {
   const handleMicrosoftLogin = () => {
     // Redirecionar para o endpoint de login da Microsoft
-    window.location.href = 'http://localhost:8000/api/v1/auth/microsoft-login';
+    window.location.href = 'https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/auth/microsoft-login';
   };
 
   return (

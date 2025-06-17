@@ -98,7 +98,7 @@ O sistema é dividido em duas camadas principais: **Frontend** e **Backend**, co
 - **Função**: Autenticação de usuários.
 - **Descrição**: O Azure AD é utilizado para autenticar alunos e professores com suas credenciais institucionais (@ibmec.edu.br). Ele fornece tokens JWT para acesso seguro ao sistema.
 - **Configuração**:
-  - URI de redirecionamento: `http://localhost:8000/api/v1/auth/callback`
+  - URI de redirecionamento: `https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/auth/callback`
   - Permissões: `User.Read`, `openid`, `profile`, `email`
 
 ### **Azure Static Web App**

@@ -36,14 +36,14 @@ const ProfessorDashboardIC = () => {
   const carregarDados = useCallback(async () => {
     try {
       // Carregar projetos pendentes
-      const pendentesRes = await fetchAuth('http://localhost:8000/api/v1/projetos/pendentes');
+      const pendentesRes = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/pendentes');
       if (pendentesRes.ok) {
         const pendentes = await pendentesRes.json();
         setProjetosPendentes(pendentes);
       }
 
       // Carregar projetos ativos
-      const ativosRes = await fetchAuth('http://localhost:8000/api/v1/projetos/ativos');
+      const ativosRes = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/ativos');
       if (ativosRes.ok) {
         const ativos = await ativosRes.json();
         setProjetosAtivos(ativos);
@@ -94,7 +94,7 @@ const ProfessorDashboardIC = () => {
 
   const aprovarProjeto = async (projetoId) => {
     try {
-      const response = await fetchAuth(`http://localhost:8000/api/v1/projetos/aprovar/${projetoId}`, {
+      const response = await fetchAuth(`https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/aprovar/${projetoId}`, {
         method: 'POST'
       });
 
@@ -129,7 +129,7 @@ const ProfessorDashboardIC = () => {
         descricao: atividadeData.descricao,
         projeto_id: Number(atividadeData.projeto_id)
       };
-      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/enviar-atividade', {
+      const response = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/enviar-atividade', {
         method: 'POST',
         body: JSON.stringify(payload)
       });

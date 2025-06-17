@@ -42,7 +42,7 @@ const AdminDashboardIC = () => {
   };
   const fetchHomeTexts = async () => {
     try {
-      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/home-texts');
+      const response = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/home-texts');
       if (response.ok) {
         const data = await response.json();
         setHomeTexts({
@@ -62,7 +62,7 @@ const AdminDashboardIC = () => {
 
   const fetchEdicoesTexts = async () => {
     try {
-      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-texts');
+      const response = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/edicoes-texts');
       if (response.ok) {
         const data = await response.json();
         setEdicoesTexts(data); // Atualizar os textos da página de Edições Anteriores no estado inicial
@@ -100,13 +100,13 @@ const AdminDashboardIC = () => {
   const carregarDados = async () => {
     try {
       // Buscar todos os projetos pendentes
-      const pendentesRes = await fetchAuth('http://localhost:8000/api/v1/projetos/todos-pendentes');
+      const pendentesRes = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/todos-pendentes');
       if (pendentesRes.ok) {
         const pendentes = await pendentesRes.json();
         setProjetosPendentes(pendentes);
       }
       // Buscar todos os projetos ativos
-      const ativosRes = await fetchAuth('http://localhost:8000/api/v1/projetos/todos-ativos');
+      const ativosRes = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/todos-ativos');
       if (ativosRes.ok) {
         const ativos = await ativosRes.json();
         setProjetosAtivos(ativos);
@@ -119,7 +119,7 @@ const AdminDashboardIC = () => {
 
   const carregarPeriodoInscricao = async () => {
     try {
-      const res = await fetchAuth('http://localhost:8000/api/v1/projetos/inscricao-periodo');
+      const res = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/inscricao-periodo');
       if (res.ok) {
         setInscricaoPeriodo(await res.json());
       }
@@ -142,7 +142,7 @@ const AdminDashboardIC = () => {
       alert('Selecione uma data limite!');
       return;
     }
-    const res = await fetchAuth('http://localhost:8000/api/v1/projetos/inscricao-periodo', {
+    const res = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/inscricao-periodo', {
       method: 'POST',
       body: JSON.stringify({ data_limite: novaDataLimite, aberto: true })
     });
@@ -154,13 +154,13 @@ const AdminDashboardIC = () => {
   };
 
   const handleFecharInscricao = async () => {
-    await fetchAuth('http://localhost:8000/api/v1/projetos/fechar-inscricao', { method: 'POST' });
+    await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/fechar-inscricao', { method: 'POST' });
     carregarPeriodoInscricao();
   };
 
   const handleAbrirInscricao = async () => {
     try {
-      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/abrir-inscricao', { method: 'POST' });
+      const response = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/abrir-inscricao', { method: 'POST' });
       if (response.ok) {
         alert('Inscrições reabertas com sucesso!');
         carregarPeriodoInscricao();
@@ -177,7 +177,7 @@ const AdminDashboardIC = () => {
   };
   const handleSaveHome = async () => {
     try {
-      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/home-texts', {
+      const response = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/home-texts', {
         method: 'POST',
         body: JSON.stringify({
           titulo: homeTexts.titulo,
@@ -190,7 +190,7 @@ const AdminDashboardIC = () => {
         // Dispara evento para outras abas atualizarem a Home
         localStorage.setItem('homeTextsUpdated', Date.now().toString());
         // Atualiza o estado local do admin
-        const updatedHomeTexts = await fetchAuth('http://localhost:8000/api/v1/projetos/home-texts');
+        const updatedHomeTexts = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/home-texts');
         if (updatedHomeTexts.ok) {
           const data = await updatedHomeTexts.json();
           setHomeTexts({
@@ -211,17 +211,16 @@ const AdminDashboardIC = () => {
   // Handlers for Edicoes texts/images
   const handleSaveEdicoes = async () => {
     try {
-      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-texts', {
+      const response = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/edicoes-texts', {
         method: 'POST',
         body: JSON.stringify({
           titulo: edicoesTexts.titulo,
           subtitulo: edicoesTexts.subtitulo,
           edicoes: edicoesTexts.edicoes // Enviar todas as edições e projetos
         })
-      });
-      if (response.ok) {
+      });      if (response.ok) {
         alert('Alterações na página de Edições Anteriores salvas com sucesso!');
-        const updatedEdicoesTexts = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-texts');
+        const updatedEdicoesTexts = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/edicoes-texts');
         if (updatedEdicoesTexts.ok) {
           setEdicoesTexts(await updatedEdicoesTexts.json()); // Atualizar o estado local após salvar
         }
@@ -240,15 +239,14 @@ const AdminDashboardIC = () => {
       alert('Preencha o campo de ano para adicionar uma nova edição.');
       return;
     }
-    const response = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-anteriores', {
+    const response = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/edicoes-anteriores', {
       method: 'POST',
       body: JSON.stringify({ ano: newEdicao.ano })
-    });
-    if (response.ok) {
+    });    if (response.ok) {
       alert('Nova edição adicionada com sucesso!');
       setNewEdicao({ ano: '' });
       // Atualiza o estado local com as edições atualizadas
-      const updatedEdicoesTexts = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-texts');
+      const updatedEdicoesTexts = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/edicoes-texts');
       if (updatedEdicoesTexts.ok) {
         setEdicoesTexts(await updatedEdicoesTexts.json());
       }
@@ -273,18 +271,17 @@ const AdminDashboardIC = () => {
     }
     // Não envie Content-Type, o browser define automaticamente para multipart/form-data
     const token = localStorage.getItem('token');
-    const response = await fetch('http://localhost:8000/api/v1/projetos/edicoes-anteriores/projetos', {
+    const response = await fetch('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/edicoes-anteriores/projetos', {
       method: 'POST',
       body: formData,
       headers: {
         'Authorization': `Bearer ${token}`
       }
-    });
-    if (response.ok) {
+    });    if (response.ok) {
       alert('Novo projeto adicionado com sucesso!');
       setNewProjeto({ titulo: '', aluno: '', orientador: '', arquivo: '', ano: '' });
       // Atualiza o estado local com as edições atualizadas
-      const updatedEdicoesTexts = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-texts');
+      const updatedEdicoesTexts = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/edicoes-texts');
       if (updatedEdicoesTexts.ok) {
         setEdicoesTexts(await updatedEdicoesTexts.json());
       }
@@ -297,12 +294,11 @@ const AdminDashboardIC = () => {
   const handleRemoveEdicao = async (ano) => {
     if (!window.confirm(`Tem certeza que deseja remover a edição ${ano}?`)) return;
     try {
-      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-anteriores/remover', {
+      const response = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/edicoes-anteriores/remover', {
         method: 'POST',
-        body: JSON.stringify({ ano })
-      });
+        body: JSON.stringify({ ano })      });
       if (response.ok) {
-        const updatedEdicoesTexts = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-texts');
+        const updatedEdicoesTexts = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/edicoes-texts');
         if (updatedEdicoesTexts.ok) {
           setEdicoesTexts(await updatedEdicoesTexts.json());
         }
@@ -318,12 +314,11 @@ const AdminDashboardIC = () => {
   const handleRemoveProjeto = async (ano, idx) => {
     if (!window.confirm('Tem certeza que deseja remover este projeto?')) return;
     try {
-      const response = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-anteriores/remover-projeto', {
+      const response = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/edicoes-anteriores/remover-projeto', {
         method: 'POST',
-        body: JSON.stringify({ ano, idx })
-      });
+        body: JSON.stringify({ ano, idx })      });
       if (response.ok) {
-        const updatedEdicoesTexts = await fetchAuth('http://localhost:8000/api/v1/projetos/edicoes-texts');
+        const updatedEdicoesTexts = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/edicoes-texts');
         if (updatedEdicoesTexts.ok) {
           setEdicoesTexts(await updatedEdicoesTexts.json());
         }

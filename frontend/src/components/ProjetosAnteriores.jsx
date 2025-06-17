@@ -11,7 +11,7 @@ const ProjetosAnteriores = () => {
   useEffect(() => {
     const fetchEdicoesTexts = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/v1/projetos/edicoes-texts', {
+        const response = await fetch('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/projetos/edicoes-texts', {
           headers: {
             'Accept': 'application/json'
           }

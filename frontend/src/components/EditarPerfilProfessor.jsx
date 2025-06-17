@@ -29,7 +29,7 @@ const EditarPerfilProfessor = ({ isAdmin, onClose, afterSave }) => {
 
   const carregarPerfil = useCallback(async () => {
     try {
-      const response = await fetchAuth('http://localhost:8000/api/v1/perfis/meu-perfil');
+      const response = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/perfis/meu-perfil');
       if (response.ok) {
         const perfilData = await response.json();
         let areas = perfilData.areas_interesse;
@@ -87,7 +87,7 @@ const EditarPerfilProfessor = ({ isAdmin, onClose, afterSave }) => {
   const handleSalvar = async () => {
     setSalvando(true);
     try {
-      const response = await fetchAuth('http://localhost:8000/api/v1/perfis/atualizar-professor', {
+      const response = await fetchAuth('https://pictibmec-gmb7b9daeteff2ep.brazilsouth-01.azurewebsites.net/api/v1/perfis/atualizar-professor', {
         method: 'PUT',
         body: JSON.stringify(perfil)
       });
