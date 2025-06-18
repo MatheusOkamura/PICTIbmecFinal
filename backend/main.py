@@ -11,10 +11,21 @@ from app.api.routes.perfis import router as perfis_router
 from app.api.routes.documentos import router as documentos_router
 from app.core.config import get_settings
 import os
-from database_setup import setup_database
+from database_config import setup_database
 
 settings = get_settings()
-setup_database()
+
+# Configurar banco de dados
+try:
+    setup_database()
+except Exception as e:
+    print(f"⚠️ Aviso: Erro ao configurar banco de dados: {e}")
+    # Fallback para database_setup.py se houver erro
+    try:
+        from database_setup import setup_database as setup_sqlite
+        setup_sqlite()
+    except Exception as e2:
+        print(f"❌ Erro ao configurar SQLite: {e2}")
 
 def determine_user_role(email: str) -> str:
     """

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "namePrefix": {
+      "value": "pictibmec"
+    },
+    "environmentName": {
+      "value": "dev"
+    },
+    "databaseAdminLogin": {
+      "value": "pictibmecadmin"
+    },
+    "databaseAdminPassword": {
+      "value": "P@ssw0rd123!"
+    },
+    "postgresVersion": {
+      "value": "16"
+    },
+    "skuName": {
+      "value": "Standard_B1ms"
+    },
+    "skuTier": {
+      "value": "Burstable"
+    },
+    "storageSizeGB": {
+      "value": 32
+    },
+    "backupRetentionDays": {
+      "value": 7
+    }
+  }
+}

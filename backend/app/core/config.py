@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     # Secret Key
     SECRET_KEY: str = os.getenv("SECRET_KEY", "fallback-secret-key")
     
+    # Configurações do Banco de Dados
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
+    POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "")
+    POSTGRES_DB: str = os.getenv("POSTGRES_DB", "")
+    POSTGRES_USER: str = os.getenv("POSTGRES_USER", "")
+    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "")
+    POSTGRES_PORT: str = os.getenv("POSTGRES_PORT", "5432")
+    
     # Escopos
     SCOPES: List[str] = ['User.Read', 'openid', 'profile', 'email']
     

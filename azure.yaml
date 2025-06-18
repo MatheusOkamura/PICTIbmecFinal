@@ -1,0 +1,16 @@
+# Azure Configuration
+name: pictibmec-cloud-project
+metadata:
+  template: python-fastapi@0.0.1-beta
+
+# Services configuration
+services:
+  backend:
+    project: ./backend
+    language: python
+    host: containerapp
+    docker:
+      path: ./backend/Dockerfile
+
+# Environment variables for development
+resourceGroup: pictibmec-rg
