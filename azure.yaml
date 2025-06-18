@@ -9,8 +9,6 @@ services:
     project: ./backend
     language: python
     host: containerapp
-    docker:
-      path: ./backend/Dockerfile
 
 # Environment variables for development
 resourceGroup: pictibmec-rg

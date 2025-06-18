@@ -5,6 +5,9 @@
     "namePrefix": {
       "value": "pictibmec"
     },
+    "location": {
+      "value": "${AZURE_LOCATION}"
+    },
     "environmentName": {
       "value": "dev"
     },
@@ -23,8 +26,7 @@
     "skuTier": {
       "value": "Burstable"
     },
-    "storageSizeGB": {
-      "value": 32
+    "storageSizeGB": {      "value": 32
     },
     "backupRetentionDays": {
       "value": 7

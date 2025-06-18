@@ -36,7 +36,7 @@ param storageSizeGB int = 32
 param backupRetentionDays int = 7
 
 // Variables
-var resourceToken = toLower(uniqueString(subscription().id, resourceGroup().id, location))
+var resourceToken = toLower(uniqueString(subscription().id, resourceGroup().id, environmentName))
 var postgresServerName = '${namePrefix}-postgres-${environmentName}-${resourceToken}'
 var databaseName = '${namePrefix}_db'
 
@@ -53,6 +53,157 @@ resource userAssignedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@
   name: '${namePrefix}-identity-${environmentName}-${resourceToken}'
   location: location
   tags: commonTags
+}
+
+// Log Analytics Workspace for Container App Environment
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
+  name: '${namePrefix}-logs-${environmentName}-${resourceToken}'
+  location: location
+  tags: commonTags
+  properties: {
+    sku: {
+      name: 'PerGB2018'
+    }
+    retentionInDays: 30
+  }
+}
+
+// Container Registry
+resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
+  name: '${namePrefix}cr${environmentName}${resourceToken}'
+  location: location
+  tags: commonTags
+  sku: {
+    name: 'Basic'
+  }
+  properties: {
+    adminUserEnabled: true
+    publicNetworkAccess: 'Enabled'
+  }
+}
+
+// Role assignment for Container Registry AcrPull
+resource acrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(containerRegistry.id, userAssignedIdentity.id, '7f951dda-4ed3-4680-a7ca-43fe172d538d')
+  scope: containerRegistry
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d') // AcrPull
+    principalId: userAssignedIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Container App Environment
+resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
+  name: '${namePrefix}-env-${environmentName}-${resourceToken}'
+  location: location
+  tags: commonTags
+  properties: {
+    appLogsConfiguration: {
+      destination: 'log-analytics'
+      logAnalyticsConfiguration: {
+        customerId: logAnalyticsWorkspace.properties.customerId
+        sharedKey: logAnalyticsWorkspace.listKeys().primarySharedKey
+      }
+    }
+  }
+}
+
+// Container App
+resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
+  name: '${namePrefix}-backend-${environmentName}-${resourceToken}'
+  location: location
+  tags: union(commonTags, {
+    'azd-service-name': 'backend'
+  })
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${userAssignedIdentity.id}': {}
+    }
+  }
+  properties: {
+    environmentId: containerAppEnvironment.id    configuration: {
+      activeRevisionsMode: 'Single'
+      registries: [
+        {
+          server: containerRegistry.properties.loginServer
+          identity: userAssignedIdentity.id
+        }
+      ]
+      ingress: {
+        external: true
+        targetPort: 8000
+        transport: 'http'
+        corsPolicy: {
+          allowedOrigins: ['*']
+          allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+          allowedHeaders: ['*']
+          allowCredentials: true
+        }
+      }
+      secrets: [
+        {
+          name: 'database-url'
+          value: 'postgresql://${databaseAdminLogin}:${databaseAdminPassword}@${postgresServer.properties.fullyQualifiedDomainName}:5432/${databaseName}?sslmode=require'
+        }
+        {
+          name: 'secret-key'
+          value: 'your-secret-key-here-${resourceToken}'
+        }
+      ]
+    }
+    template: {
+      containers: [
+        {
+          name: 'backend'
+          image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+          resources: {
+            cpu: json('0.25')
+            memory: '0.5Gi'
+          }
+          env: [
+            {
+              name: 'DATABASE_URL'
+              secretRef: 'database-url'
+            }
+            {
+              name: 'SECRET_KEY'
+              secretRef: 'secret-key'
+            }
+            {
+              name: 'FRONTEND_URL'
+              value: 'https://${namePrefix}-frontend-${environmentName}-${resourceToken}.azurestaticapps.net'
+            }
+            {
+              name: 'POSTGRES_HOST'
+              value: postgresServer.properties.fullyQualifiedDomainName
+            }
+            {
+              name: 'POSTGRES_DB'
+              value: databaseName
+            }
+            {
+              name: 'POSTGRES_USER'
+              value: databaseAdminLogin
+            }
+            {
+              name: 'POSTGRES_PASSWORD'
+              value: databaseAdminPassword
+            }
+            {
+              name: 'POSTGRES_PORT'
+              value: '5432'
+            }
+          ]
+        }
+      ]
+      scale: {
+        minReplicas: 1
+        maxReplicas: 3
+      }
+    }
+  }
 }
 
 // PostgreSQL Flexible Server
@@ -118,9 +269,16 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' =
 }
 
 // Outputs
+output RESOURCE_GROUP_ID string = resourceGroup().id
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerRegistry.properties.loginServer
 output postgresServerName string = postgresServer.name
 output postgresServerFqdn string = postgresServer.properties.fullyQualifiedDomainName
 output databaseName string = databaseName
 output connectionString string = 'postgresql://${databaseAdminLogin}:${databaseAdminPassword}@${postgresServer.properties.fullyQualifiedDomainName}:5432/${databaseName}?sslmode=require'
 output userAssignedIdentityId string = userAssignedIdentity.id
 output userAssignedIdentityClientId string = userAssignedIdentity.properties.clientId
+output containerAppUrl string = 'https://${containerApp.properties.configuration.ingress.fqdn}'
+output containerAppEnvironmentId string = containerAppEnvironment.id
+output logAnalyticsWorkspaceId string = logAnalyticsWorkspace.id
+output containerRegistryLoginServer string = containerRegistry.properties.loginServer
+output containerRegistryName string = containerRegistry.name
